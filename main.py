@@ -112,8 +112,10 @@ async def clean_command(interaction: discord.Interaction, amount: int):
         await interaction.response.send_message("❌ You need Manage Messages permission.", ephemeral=True)
         return
 
+    await interaction.response.defer()  # ✅ Acknowledge the command immediately
+
     deleted = await interaction.channel.purge(limit=amount + 1)
-    confirmation = await interaction.channel.send(f"🧹 Deleted {len(deleted) - 1} messages.")
+    confirmation = await interaction.followup.send(f"🧹 Deleted {len(deleted) - 1} messages.")
     await asyncio.sleep(10)
     await confirmation.delete()
 
