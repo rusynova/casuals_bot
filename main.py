@@ -52,7 +52,7 @@ async def weekly_reminder():
                     file=picture
                 )
 
-@tasks.loop(minutes=1)
+@tasks.loop(minutes=4)
 async def test_reminder():
     print("🔁 Test loop running...")
     channel = bot.get_channel(CHANNEL_ID)
