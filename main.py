@@ -41,4 +41,21 @@ async def test(ctx):
         print(f"❌ Error: {e}")
         await ctx.send("Failed to load image.")
 
-bot.run(os.getenv("DISCORD_TOKEN"))
+import traceback
+import requests  # Add this at the top if it's not already imported
+
+def send_discord_alert(message: str):
+    webhook_url = os.getenv("DISCORD_WEBHOOK")
+    if webhook_url:
+        payload = {"content": f"🚨 Bot crashed: {message}"}
+        try:
+            requests.post(webhook_url, json=payload)
+        except Exception as e:
+            print("❌ Failed to send crash alert:", e)
+
+try:
+    bot.run(os.getenv("DISCORD_TOKEN"))
+except Exception as e:
+    print("🚨 BOT CRASHED!")
+    traceback.print_exc()
+    send_discord_alert(str(e))
