@@ -67,34 +67,49 @@ async def test(ctx):
         await ctx.send("Failed to load image.")
 
 @bot.command()
-async def toggle_test(ctx):
+async def toggle_test_on(ctx):
     global TEST_MODE_ENABLED
 
     if ctx.author.id != OWNER_ID:
         try:
             await ctx.message.delete()
         except discord.Forbidden:
-            print("⚠️ Bot missing permissions to delete messages.")
+            print("⚠️ Missing permissions to delete message.")
         return
 
-    TEST_MODE_ENABLED = not TEST_MODE_ENABLED
-
-    if TEST_MODE_ENABLED:
+    if not TEST_MODE_ENABLED:
+        TEST_MODE_ENABLED = True
         test_reminder.start()
-        status = "✅ Test mode is now ON."
+        msg = "✅ Test mode is now ON."
     else:
-        test_reminder.cancel()
-        status = "🛑 Test mode is now OFF."
+        msg = "🔄 Test mode was already ON."
 
     try:
-        await ctx.author.send(status)
+        await ctx.author.send(msg)
     except discord.Forbidden:
-        await ctx.send("✅ Toggled, but I couldn't DM you!")
+        await ctx.send(msg)
 
     try:
         await ctx.message.delete()
     except discord.Forbidden:
-        print("⚠️ Bot missing permissions to delete messages.")
+        print("⚠️ Missing permissions to delete message.")
+
+@bot.command()
+async def toggle_test_off(ctx):
+    global TEST_MODE_ENABLED
+
+    if ctx.author.id != OWNER_ID:
+        try:
+            await ctx.message.delete()
+        except discord.Forbidden:
+            print("⚠️ Missing permissions to delete message.")
+        return
+
+    if TEST_MODE_ENABLED:
+        TEST_MODE_ENABLED = False
+        test_reminder.cancel()
+        msg = "🛑 Test mode is now OFF."
+    else:
 
 @bot.command()
 async def status(ctx):
