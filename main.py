@@ -100,16 +100,12 @@ async def toggle_test(ctx):
         TEST_MODE_ENABLED = True
         msg = "✅ Test mode is now ON."
 
-    try:
-        await ctx.author.send(msg)
-    except discord.Forbidden:
-        await ctx.send(msg)
+    await ctx.send(msg)  # 👈 post status in channel
 
     try:
         await ctx.message.delete()
     except discord.Forbidden:
         print("⚠️ Missing permissions to delete message.")
-
 
 @bot.command()
 async def status(ctx):
