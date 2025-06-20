@@ -107,8 +107,11 @@ async def toggle_test_off(ctx):
 
     if TEST_MODE_ENABLED:
         TEST_MODE_ENABLED = False
-        test_reminder.cancel()
-        msg = "🛑 Test mode is now OFF."
+        if test_reminder.is_running():
+            test_reminder.cancel()
+            msg = "🛑 Test mode is now OFF and the test loop was stopped."
+        else:
+            msg = "🛑 Test mode was OFF, but loop wasn't running."
     else:
         msg = "🔄 Test mode was already OFF."
 
