@@ -13,7 +13,7 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
 DISCORD_WEBHOOK = os.getenv("DISCORD_WEBHOOK")
-OWNER_ID = 123456789012345678  # Bot owner ID
+OWNER_ID = 162729945213173761  # Bot owner ID
 CHANNEL_ID= 1252318623087722538  # Casuals Discord ID
 PROD_CHANNEL_ID = 1385026885615882461  # Test server "joshua's personal discord"
 
