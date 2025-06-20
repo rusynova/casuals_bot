@@ -77,35 +77,7 @@ async def test(ctx):
         await ctx.send("Failed to load image.")
 
 @bot.command()
-async def toggle_test_on(ctx):
-    global TEST_MODE_ENABLED
-
-    if ctx.author.id != OWNER_ID:
-        try:
-            await ctx.message.delete()
-        except discord.Forbidden:
-            print("⚠️ Missing permissions to delete message.")
-        return
-
-    if not TEST_MODE_ENABLED:
-        TEST_MODE_ENABLED = True
-        test_reminder.start()
-        msg = "✅ Test mode is now ON."
-    else:
-        msg = "🔄 Test mode was already ON."
-
-    try:
-        await ctx.author.send(msg)
-    except discord.Forbidden:
-        await ctx.send(msg)
-
-    try:
-        await ctx.message.delete()
-    except discord.Forbidden:
-        print("⚠️ Missing permissions to delete message.")
-
-@bot.command()
-async def toggle_test_off(ctx):
+async def toggle_test(ctx):
     global TEST_MODE_ENABLED
 
     if ctx.author.id != OWNER_ID:
@@ -116,14 +88,17 @@ async def toggle_test_off(ctx):
         return
 
     if TEST_MODE_ENABLED:
-        TEST_MODE_ENABLED = False
         if test_reminder.is_running():
             test_reminder.cancel()
-            msg = "🛑 Test mode is now OFF and the test loop was stopped."
-        else:
-            msg = "🛑 Test mode was OFF, but loop wasn't running."
+            print("🛑 Test reminder loop canceled.")
+        TEST_MODE_ENABLED = False
+        msg = "🛑 Test mode is now OFF."
     else:
-        msg = "🔄 Test mode was already OFF."
+        if not test_reminder.is_running():
+            test_reminder.start()
+            print("🧪 Test reminder loop started.")
+        TEST_MODE_ENABLED = True
+        msg = "✅ Test mode is now ON."
 
     try:
         await ctx.author.send(msg)
@@ -134,6 +109,7 @@ async def toggle_test_off(ctx):
         await ctx.message.delete()
     except discord.Forbidden:
         print("⚠️ Missing permissions to delete message.")
+
 
 @bot.command()
 async def status(ctx):
