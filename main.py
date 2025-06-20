@@ -42,7 +42,7 @@ async def on_ready():
 @tasks.loop(minutes=1)
 async def weekly_reminder():
     now = datetime.now()
-    if now.weekday() == 2 and now.hour == 2 and now.minute == 0:
+    if now.weekday() == 1 and now.hour == 17 and now.minute == 0: #tuesday @ 5pm PST
         channel = bot.get_channel(CHANNEL_ID)
         if channel:
             with open("maplestory_weekly_reset_additional.png", "rb") as f:
