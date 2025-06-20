@@ -33,7 +33,7 @@ async def on_ready():
         try:
             owner = await bot.fetch_user(OWNER_ID)
             if owner:
-                await owner.send("🧪 Bot is online in TEST MODE. Use `!toggle_test_on` to start the loop.")
+                await owner.send("🧪 Bot is online in TEST MODE. Use `!toggle_test` to start the loop.")
         except discord.Forbidden:
             print("⚠️ Couldn't DM the owner on startup.")
     else:
