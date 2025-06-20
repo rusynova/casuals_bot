@@ -11,17 +11,13 @@ from discord import app_commands
 
 intents = discord.Intents.default()
 intents.message_content = True
-intents.guilds = True
 bot = commands.Bot(command_prefix="!", intents=intents)
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
 DISCORD_WEBHOOK = os.getenv("DISCORD_WEBHOOK")
 OWNER_ID = 162729945213173761
-CHANNEL_ID = 1385026885615882461
-ENABLE_ANNOUNCEMENT_CHECK = False
-#ANNOUNCEMENT_CHANNEL_ID = 309809230095843328  # Maplestory's Announcement Channel ID
-#ANNOUNCEMENT_RELAY_CHANNEL_ID = 1256087145102184489  # Causal's Maintencestory Channel ID
+CHANNEL_ID = 1252318623087722538
+#CHANNEL_ID = 1385026885615882461 (joshua's personal discord)
 TEST_MODE_ENABLED = os.getenv("TEST_MODE", "false").lower() == "true"
-#LATEST_ANNOUNCEMENT_ID = None  # Track last posted message
 
 # ------------------- EVENTS -------------------
 
@@ -30,12 +26,6 @@ async def on_ready():
     await bot.tree.sync()
     print(f"✅ Logged in as {bot.user}")
     weekly_reminder.start()
-
-    if ENABLE_ANNOUNCEMENT_CHECK:
-        announcement_checker.start()
-        print("📢 Announcement checker started.")
-    else:
-        print("📢 Announcement checker is DISABLED.")
 
     if TEST_MODE_ENABLED:
         print("🧪 Test mode is ON — awaiting manual command to start test loop.")
@@ -53,7 +43,7 @@ async def on_ready():
 @tasks.loop(minutes=1)
 async def weekly_reminder():
     now = datetime.now()
-    if now.weekday() == 2 and now.hour == 2 and now.minute == 0:
+    if now.weekday() == 1 and now.hour == 17 and now.minute == 0: #tuesday @ 5pm PST
         channel = bot.get_channel(CHANNEL_ID)
         if channel:
             with open("maplestory_weekly_reset_additional.png", "rb") as f:
@@ -72,29 +62,6 @@ async def test_reminder():
             picture = discord.File(f)
             await channel.send("🧪 Test Reminder Loop Active! 🗓️ Weekly Reset tomorrow! Get your shit done. <@&1385701226158620672>", file=picture)
 
-@tasks.loop(minutes=1)
-async def announcement_checker():
-    if not ENABLE_ANNOUNCEMENT_CHECK:
-        return  # Exit early if the feature is off
-
-    global LATEST_ANNOUNCEMENT_ID
-
-    channel = bot.get_channel(ANNOUNCEMENT_CHANNEL_ID)
-    if not channel:
-        print("❌ Announcement channel not found.")
-        return
-
-    try:
-        async for message in channel.history(limit=5):
-            if message.id != LATEST_ANNOUNCEMENT_ID:
-                LATEST_ANNOUNCEMENT_ID = message.id
-                webhook_channel = bot.get_channel(ANNOUNCEMENT_RELAY_CHANNEL_ID)
-                if webhook_channel:
-                    await webhook_channel.send(f"📢 New Announcement: {message.content}")
-                break
-    except Exception as e:
-        print(f"❌ Error checking announcements: {e}")
-
 # ------------------- SLASH COMMANDS -------------------
 
 @bot.tree.command(name="test", description="Send a test MapleStory weekly reset image")
@@ -102,7 +69,7 @@ async def test_command(interaction: discord.Interaction):
     try:
         with open("maplestory_weekly_reset_additional.png", "rb") as f:
             picture = discord.File(f)
-            await interaction.response.send_message("🧪 Test: MapleStory Weekly Reset Reminder!", file=picture)
+            await interaction.response.send_message("🧪 Test Reminder Loop Active! 🗓️ Weekly Reset tomorrow! Get your shit done. <@&1385701226158620672>", file=picture)
     except Exception as e:
         print(f"❌ Error: {e}")
         await interaction.response.send_message("Failed to load image.", ephemeral=True)
@@ -146,7 +113,8 @@ async def clean_command(interaction: discord.Interaction, amount: int):
         await interaction.response.send_message("❌ You need Manage Messages permission.", ephemeral=True)
         return
 
-    await interaction.response.defer()
+    await interaction.response.defer()  # ✅ Acknowledge the command immediately
+
     deleted = await interaction.channel.purge(limit=amount + 1)
     confirmation = await interaction.followup.send(f"🧹 Deleted {len(deleted) - 1} messages.")
     await asyncio.sleep(10)
