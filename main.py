@@ -5,25 +5,24 @@ import requests
 import asyncio
 from datetime import datetime
 from discord.ext import commands, tasks
+from discord import app_commands
 
 # ------------------- CONFIG -------------------
 
 intents = discord.Intents.default()
 intents.message_content = True
 bot = commands.Bot(command_prefix="!", intents=intents)
-
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
 DISCORD_WEBHOOK = os.getenv("DISCORD_WEBHOOK")
-OWNER_ID = 162729945213173761  # Bot owner ID
-CHANNEL_ID= 1385026885615882461  
-
-# Use environment variable or static toggle
+OWNER_ID = 162729945213173761
+CHANNEL_ID = 1385026885615882461
 TEST_MODE_ENABLED = os.getenv("TEST_MODE", "false").lower() == "true"
 
 # ------------------- EVENTS -------------------
 
 @bot.event
 async def on_ready():
+    await bot.tree.sync()
     print(f"✅ Logged in as {bot.user}")
     weekly_reminder.start()
 
@@ -32,7 +31,7 @@ async def on_ready():
         try:
             owner = await bot.fetch_user(OWNER_ID)
             if owner:
-                await owner.send("🧪 Bot is online in TEST MODE. Use `!toggle_test` to start the loop.")
+                await owner.send("🧪 Bot is online in TEST MODE. Use `/toggle_test` to start the loop.")
         except discord.Forbidden:
             print("⚠️ Couldn't DM the owner on startup.")
     else:
@@ -43,7 +42,7 @@ async def on_ready():
 @tasks.loop(minutes=1)
 async def weekly_reminder():
     now = datetime.now()
-    if now.weekday() == 2 and now.hour == 2 and now.minute == 0:  # Tuesday 2:00 AM UTC
+    if now.weekday() == 2 and now.hour == 2 and now.minute == 0:
         channel = bot.get_channel(CHANNEL_ID)
         if channel:
             with open("maplestory_weekly_reset_additional.png", "rb") as f:
@@ -62,28 +61,24 @@ async def test_reminder():
             picture = discord.File(f)
             await channel.send("🧪 Test Reminder Loop Active! 🗓️ Weekly Reset tomorrow! Get your shit done. <@&1385701226158620672>", file=picture)
 
-# ------------------- COMMANDS -------------------
+# ------------------- SLASH COMMANDS -------------------
 
-@bot.command()
-async def test(ctx):
-    print("Received !test")
+@bot.tree.command(name="test", description="Send a test MapleStory weekly reset image")
+async def test_command(interaction: discord.Interaction):
     try:
         with open("maplestory_weekly_reset_additional.png", "rb") as f:
             picture = discord.File(f)
-            await ctx.send("🧪 Test: MapleStory Weekly Reset Reminder!", file=picture)
+            await interaction.response.send_message("🧪 Test: MapleStory Weekly Reset Reminder!", file=picture)
     except Exception as e:
         print(f"❌ Error: {e}")
-        await ctx.send("Failed to load image.")
+        await interaction.response.send_message("Failed to load image.", ephemeral=True)
 
-@bot.command()
-async def toggle_test(ctx):
+@bot.tree.command(name="toggle_test", description="Toggle test mode on or off")
+async def toggle_test_command(interaction: discord.Interaction):
     global TEST_MODE_ENABLED
 
-    if ctx.author.id != OWNER_ID:
-        try:
-            await ctx.message.delete()
-        except discord.Forbidden:
-            print("⚠️ Missing permissions to delete message.")
+    if interaction.user.id != OWNER_ID:
+        await interaction.response.send_message("❌ You don’t have permission to do that.", ephemeral=True)
         return
 
     if TEST_MODE_ENABLED:
@@ -99,52 +94,28 @@ async def toggle_test(ctx):
         TEST_MODE_ENABLED = True
         msg = "✅ Test mode is now ON."
 
-    await ctx.send(msg)  # 👈 post status in channel
+    await interaction.response.send_message(msg)
 
-    try:
-        await ctx.message.delete()
-    except discord.Forbidden:
-        print("⚠️ Missing permissions to delete message.")
-
-@bot.command()
-async def status(ctx):
-    if ctx.author.id != OWNER_ID:
-        try:
-            await ctx.message.delete()
-        except discord.Forbidden:
-            print("⚠️ Missing permissions to delete message.")
+@bot.tree.command(name="status", description="Check if test mode is currently active")
+async def status_command(interaction: discord.Interaction):
+    if interaction.user.id != OWNER_ID:
+        await interaction.response.send_message("❌ You don’t have permission to check this.", ephemeral=True)
         return
 
-    status_message = (
-        "🧪 Test mode is currently **ON** ✅"
-        if TEST_MODE_ENABLED
-        else "🛑 Test mode is currently **OFF**"
-    )
+    msg = "🧪 Test mode is currently **ON** ✅" if TEST_MODE_ENABLED else "🛑 Test mode is currently **OFF**"
+    await interaction.response.send_message(msg, ephemeral=True)
 
-    try:
-        await ctx.author.send(status_message)
-    except discord.Forbidden:
-        await ctx.send("📬 Couldn't DM you, but test mode is active.")
+@bot.tree.command(name="clean", description="Clean up a number of recent messages in this channel")
+@app_commands.describe(amount="Number of messages to delete")
+async def clean_command(interaction: discord.Interaction, amount: int):
+    if not interaction.channel.permissions_for(interaction.user).manage_messages:
+        await interaction.response.send_message("❌ You need Manage Messages permission.", ephemeral=True)
+        return
 
-    try:
-        await ctx.message.delete()
-    except discord.Forbidden:
-        print("⚠️ Missing permissions to delete message.")
-
-@bot.command()
-@commands.has_permissions(manage_messages=True)
-async def clean(ctx, amount: int = 10):
-    """Deletes a specified number of messages (default: 10)."""
-    try:
-        deleted = await ctx.channel.purge(limit=amount + 1)  # +1 to also delete the command message
-        confirmation = await ctx.send(f"🧹 Deleted {len(deleted) - 1} messages.")
-        await asyncio.sleep(10)
-        await confirmation.delete()
-    except discord.Forbidden:
-        await ctx.send("❌ I don’t have permission to delete messages.")
-    except Exception as e:
-        print(f"❌ Error in clean command: {e}")
-        await ctx.send("Something went wrong.")
+    deleted = await interaction.channel.purge(limit=amount + 1)
+    confirmation = await interaction.channel.send(f"🧹 Deleted {len(deleted) - 1} messages.")
+    await asyncio.sleep(10)
+    await confirmation.delete()
 
 # ------------------- ERROR HANDLING -------------------
 
