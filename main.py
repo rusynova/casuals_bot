@@ -59,7 +59,7 @@ async def test_reminder():
 async def test(ctx):
     print("Received !test")
     try:
-        with open("maplestory_weekly_reset.png", "rb") as f:
+        with open("maplestory_weekly_reset_additional.png", "rb") as f:
             picture = discord.File(f)
             await ctx.send("🧪 Test: MapleStory Weekly Reset Reminder!", file=picture)
     except Exception as e:
