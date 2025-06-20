@@ -17,10 +17,11 @@ DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
 DISCORD_WEBHOOK = os.getenv("DISCORD_WEBHOOK")
 OWNER_ID = 162729945213173761
 CHANNEL_ID = 1385026885615882461
-ANNOUNCEMENT_CHANNEL_ID = 309809230095843328  # Maplestory's Announcement Channel ID
-ANNOUNCEMENT_RELAY_CHANNEL_ID = 1256087145102184489  # Causal's Maintencestory Channel ID
+ENABLE_ANNOUNCEMENT_CHECK = False
+#ANNOUNCEMENT_CHANNEL_ID = 309809230095843328  # Maplestory's Announcement Channel ID
+#ANNOUNCEMENT_RELAY_CHANNEL_ID = 1256087145102184489  # Causal's Maintencestory Channel ID
 TEST_MODE_ENABLED = os.getenv("TEST_MODE", "false").lower() == "true"
-LATEST_ANNOUNCEMENT_ID = None  # Track last posted message
+#LATEST_ANNOUNCEMENT_ID = None  # Track last posted message
 
 # ------------------- EVENTS -------------------
 
@@ -29,7 +30,12 @@ async def on_ready():
     await bot.tree.sync()
     print(f"✅ Logged in as {bot.user}")
     weekly_reminder.start()
-    announcement_checker.start()
+
+    if ENABLE_ANNOUNCEMENT_CHECK:
+        announcement_checker.start()
+        print("📢 Announcement checker started.")
+    else:
+        print("📢 Announcement checker is DISABLED.")
 
     if TEST_MODE_ENABLED:
         print("🧪 Test mode is ON — awaiting manual command to start test loop.")
@@ -68,9 +74,11 @@ async def test_reminder():
 
 @tasks.loop(minutes=1)
 async def announcement_checker():
+    if not ENABLE_ANNOUNCEMENT_CHECK:
+        return  # Exit early if the feature is off
+
     global LATEST_ANNOUNCEMENT_ID
 
-    guild = discord.utils.get(bot.guilds)
     channel = bot.get_channel(ANNOUNCEMENT_CHANNEL_ID)
     if not channel:
         print("❌ Announcement channel not found.")
