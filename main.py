@@ -106,3 +106,8 @@ except Exception as e:
     print("🚨 BOT CRASHED!")
     traceback.print_exc()
     send_discord_alert(str(e))
+
+try:
+    await ctx.message.delete()
+except discord.Forbidden:
+    print("⚠️ Bot missing permissions to delete messages.")
