@@ -110,6 +110,17 @@ async def toggle_test_off(ctx):
         test_reminder.cancel()
         msg = "🛑 Test mode is now OFF."
     else:
+        msg = "🔄 Test mode was already OFF."
+
+    try:
+        await ctx.author.send(msg)
+    except discord.Forbidden:
+        await ctx.send(msg)
+
+    try:
+        await ctx.message.delete()
+    except discord.Forbidden:
+        print("⚠️ Missing permissions to delete message.")
 
 @bot.command()
 async def status(ctx):
