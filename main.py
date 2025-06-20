@@ -43,7 +43,7 @@ async def on_ready():
 async def weekly_reminder():
     now = datetime.now()
     if now.weekday() == 2 and now.hour == 2 and now.minute == 0:  # Tuesday 2:00 AM UTC
-        channel = bot.get_channel(channel_id)
+        channel = bot.get_channel(CHANNEL_ID)
         if channel:
             with open("maplestory_weekly_reset_additional.png", "rb") as f:
                 picture = discord.File(f)
@@ -55,7 +55,7 @@ async def weekly_reminder():
 @tasks.loop(minutes=1)
 async def test_reminder():
     print("🔁 Test loop running...")
-    channel = bot.get_channel(channel_id)
+    channel = bot.get_channel(CHANNEL_ID)
     if channel:
         with open("maplestory_weekly_reset_additional.png", "rb") as f:
             picture = discord.File(f)
