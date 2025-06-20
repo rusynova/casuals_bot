@@ -59,7 +59,7 @@ async def test_reminder():
     if channel:
         with open("maplestory_weekly_reset_additional.png", "rb") as f:
             picture = discord.File(f)
-            await channel.send("🧪 Test Reminder Loop Active!", file=picture)
+            await channel.send("🧪 Test Reminder Loop Active! 🗓️ Weekly Reset tomorrow! Get your shit done. <@&1385701226158620672>", file=picture)
 
 # ------------------- COMMANDS -------------------
 
