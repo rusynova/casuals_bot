@@ -71,7 +71,10 @@ async def toggle_test(ctx):
     global TEST_MODE_ENABLED
 
     if ctx.author.id != OWNER_ID:
-        await ctx.message.delete()
+        try:
+            await ctx.message.delete()
+        except discord.Forbidden:
+            print("⚠️ Bot missing permissions to delete messages.")
         return
 
     TEST_MODE_ENABLED = not TEST_MODE_ENABLED
@@ -88,7 +91,10 @@ async def toggle_test(ctx):
     except discord.Forbidden:
         await ctx.send("✅ Toggled, but I couldn't DM you!")
 
-    await ctx.message.delete()
+    try:
+        await ctx.message.delete()
+    except discord.Forbidden:
+        print("⚠️ Bot missing permissions to delete messages.")
 
 # ------------------- ERROR HANDLING -------------------
 
@@ -106,8 +112,3 @@ except Exception as e:
     print("🚨 BOT CRASHED!")
     traceback.print_exc()
     send_discord_alert(str(e))
-
-try:
-    await ctx.message.delete()
-except discord.Forbidden:
-    print("⚠️ Bot missing permissions to delete messages.")
