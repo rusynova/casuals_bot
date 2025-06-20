@@ -138,7 +138,7 @@ async def clean(ctx, amount: int = 10):
     try:
         deleted = await ctx.channel.purge(limit=amount + 1)  # +1 to also delete the command message
         confirmation = await ctx.send(f"🧹 Deleted {len(deleted) - 1} messages.")
-        await asyncio.sleep(3)
+        await asyncio.sleep(10)
         await confirmation.delete()
     except discord.Forbidden:
         await ctx.send("❌ I don’t have permission to delete messages.")
