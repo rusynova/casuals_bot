@@ -68,7 +68,7 @@ async def test_command(interaction: discord.Interaction):
     try:
         with open("maplestory_weekly_reset_additional.png", "rb") as f:
             picture = discord.File(f)
-            await interaction.response.send_message("🧪 Test: MapleStory Weekly Reset Reminder!", file=picture)
+            await interaction.response.send_message("🧪 Test Reminder Loop Active! 🗓️ Weekly Reset tomorrow! Get your shit done. <@&1385701226158620672>", file=picture)
     except Exception as e:
         print(f"❌ Error: {e}")
         await interaction.response.send_message("Failed to load image.", ephemeral=True)
