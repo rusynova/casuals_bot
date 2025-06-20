@@ -96,6 +96,31 @@ async def toggle_test(ctx):
     except discord.Forbidden:
         print("⚠️ Bot missing permissions to delete messages.")
 
+@bot.command()
+async def status(ctx):
+    if ctx.author.id != OWNER_ID:
+        try:
+            await ctx.message.delete()
+        except discord.Forbidden:
+            print("⚠️ Missing permissions to delete message.")
+        return
+
+    status_message = (
+        "🧪 Test mode is currently **ON** ✅"
+        if TEST_MODE_ENABLED
+        else "🛑 Test mode is currently **OFF**"
+    )
+
+    try:
+        await ctx.author.send(status_message)
+    except discord.Forbidden:
+        await ctx.send("📬 Couldn't DM you, but test mode is active.")
+
+    try:
+        await ctx.message.delete()
+    except discord.Forbidden:
+        print("⚠️ Missing permissions to delete message.")
+
 # ------------------- ERROR HANDLING -------------------
 
 def send_discord_alert(message: str):
