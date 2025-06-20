@@ -130,6 +130,21 @@ async def status(ctx):
     except discord.Forbidden:
         print("⚠️ Missing permissions to delete message.")
 
+@bot.command()
+@commands.has_permissions(manage_messages=True)
+async def clean(ctx, amount: int = 10):
+    """Deletes a specified number of messages (default: 10)."""
+    try:
+        deleted = await ctx.channel.purge(limit=amount + 1)  # +1 to also delete the command message
+        confirmation = await ctx.send(f"🧹 Deleted {len(deleted) - 1} messages.")
+        await asyncio.sleep(3)
+        await confirmation.delete()
+    except discord.Forbidden:
+        await ctx.send("❌ I don’t have permission to delete messages.")
+    except Exception as e:
+        print(f"❌ Error in clean command: {e}")
+        await ctx.send("Something went wrong.")
+
 # ------------------- ERROR HANDLING -------------------
 
 def send_discord_alert(message: str):
