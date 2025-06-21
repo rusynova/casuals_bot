@@ -135,7 +135,7 @@ async def clean_command(interaction: discord.Interaction, amount: int):
     await asyncio.sleep(10)
     await confirmation.delete()
 
-@bot.tree.command(name="settimezone", description="Set your timezone (e.g. America/New_York)")
+@bot.tree.command(name="settimezone", description="Set your timezone (e.g. America/New_York)", guild=discord.Object(id=GUILD_ID))
 @app_commands.describe(tz="Timezone name")
 async def set_timezone(interaction: discord.Interaction, tz: str):
     try:
@@ -149,7 +149,7 @@ async def set_timezone(interaction: discord.Interaction, tz: str):
     save_timezones(timezones)
     await interaction.response.send_message(f"✅ Timezone set to `{tz}`", ephemeral=True)
 
-@bot.tree.command(name="time", description="Convert a time to your timezone")
+@bot.tree.command(name="time", description="Convert a time to your timezone", guild=discord.Object(id=GUILD_ID))
 @app_commands.describe(time="Example: '5pm PST' or 'June 22 7pm' or 'tomorrow 3pm'")
 async def time_command(interaction: discord.Interaction, time: str):
     timezones = load_timezones()
