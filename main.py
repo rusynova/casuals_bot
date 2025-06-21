@@ -19,7 +19,7 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
 DISCORD_WEBHOOK = os.getenv("DISCORD_WEBHOOK")
 OWNER_ID = 162729945213173761
-CHANNEL_ID = 1252318623087722538
+CHANNEL_ID = 1385889605194088498
 TEST_MODE_ENABLED = os.getenv("TEST_MODE", "false").lower() == "true"
 TIMEZONE_FILE = "user_timezones.json"
 GUILD_ID = 401584720288153600
