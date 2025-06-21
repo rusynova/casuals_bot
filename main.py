@@ -181,7 +181,7 @@ async def test_reminder():
             await channel.send("🧪 Test Reminder Loop Active! 🗓️ Weekly Reset tomorrow! Get your shit done. <@&1385701226158620672>", file=picture)
             
 # UTC Clock task
-@tasks.loop(minutes=1)
+@tasks.loop(minutes=5)
 async def update_clock_channel():
     current_time = datetime.now(timezone.utc).strftime("%-I:%M%p").lower()
     new_name = f"🕒 UTC: {current_time}"
