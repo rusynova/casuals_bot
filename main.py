@@ -41,19 +41,29 @@ def save_timezones(data):
 
 class TimezoneDropdown(discord.ui.Select):
     def __init__(self):
-      preferred_timezones = [
-    "America/Los_Angeles", "America/New_York", "America/Chicago", "America/Denver",
-    "Europe/London", "Europe/Paris", "Europe/Berlin",
-    "Asia/Tokyo", "Asia/Seoul", "Asia/Singapore",
-    "Australia/Sydney", "Australia/Melbourne",
-    "Pacific/Auckland",
-    "UTC"
-]
+        # Curated and user-friendly timezone list
+        preferred_timezones = [
+            "America/Los_Angeles", "America/Denver", "America/Chicago", "America/New_York",
+            "Europe/London", "Europe/Paris", "Europe/Berlin",
+            "Asia/Tokyo", "Asia/Seoul", "Asia/Singapore",
+            "Australia/Sydney", "Australia/Melbourne",
+            "Pacific/Auckland", "UTC"
+        ]
 
-options = [
-    discord.SelectOption(label=tz.replace("_", " "), value=tz)
-    for tz in preferred_timezones
-]
+        options = [
+            discord.SelectOption(
+                label=tz.replace("_", " "),  # Show "Los Angeles" instead of "Los_Angeles"
+                value=tz
+            )
+            for tz in preferred_timezones
+        ]
+
+        super().__init__(
+            placeholder="🌍 Choose your timezone...",
+            min_values=1,
+            max_values=1,
+            options=options
+        )
 
     async def callback(self, interaction: discord.Interaction):
         selected_tz = self.values[0]
@@ -61,11 +71,6 @@ options = [
         timezones[str(interaction.user.id)] = selected_tz
         save_timezones(timezones)
         await interaction.response.send_message(f"✅ Timezone set to `{selected_tz}`", ephemeral=True)
-
-class TimezoneView(discord.ui.View):
-    def __init__(self):
-        super().__init__()
-        self.add_item(TimezoneDropdown())
 
 # ------------------- EVENTS -------------------
 
