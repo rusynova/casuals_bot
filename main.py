@@ -38,7 +38,7 @@ def save_timezones(data):
 
 @bot.event
 async def on_ready():
-    await bot.tree.sync()
+    synced = await bot.tree.sync()
     print(f"✅ Logged in as {bot.user}")
     weekly_reminder.start()
 
