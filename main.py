@@ -21,6 +21,7 @@ OWNER_ID = 162729945213173761
 CHANNEL_ID = 1252318623087722538
 TEST_MODE_ENABLED = os.getenv("TEST_MODE", "false").lower() == "true"
 TIMEZONE_FILE = "user_timezones.json"
+GUILD_ID = 401584720288153600
 
 # ------------------- UTILITY FUNCTIONS -------------------
 
@@ -38,8 +39,8 @@ def save_timezones(data):
 
 @bot.event
 async def on_ready():
-    synced = await bot.tree.sync()
-    print(f"✅ Logged in as {bot.user}")
+    synced = await bot.tree.sync(guild=discord.Object(id=GUILD_ID))
+    print(f"🔧 Synced {len(synced)} commands to test guild: {[cmd.name for cmd in synced]}")
     weekly_reminder.start()
 
     if TEST_MODE_ENABLED:
