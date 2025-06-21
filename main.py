@@ -25,7 +25,7 @@ TIMEZONE_FILE = "user_timezones.json"
 GUILD_ID = 401584720288153600
 TIMEZONE_FILE = "user_timezones.json"
 current_time = datetime.now(timezone.utc).strftime("%-I:%M%p").lower()
-last_update_times = {}
+last_clock_names = {}
 
 # ------------------- UTILITY FUNCTIONS -------------------
 
