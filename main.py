@@ -40,13 +40,13 @@ def save_timezones(data):
 # ------------------- TIMEZONE DROPDOWNS -------------------
 
 POPULAR_TIMEZONES = [
-    ("🇺🇸 Pacific (Oregon)", "America/Los_Angeles"),
-    ("🇺🇸 Mountain (Colorado)", "America/Denver"),
-    ("🇺🇸 Central (Minnesota)", "America/Chicago"),
-    ("🇺🇸 Eastern (Florida)", "America/New_York"),
-    ("🇬🇧 UK", "Europe/London"),
-    ("🇪🇺 Central Europe", "Europe/Berlin"),
-    ("🇦🇺 Sydney", "Australia/Sydney")
+    ("\U0001F1FA\U0001F1F8 Pacific (Oregon)", "America/Los_Angeles"),
+    ("\U0001F1FA\U0001F1F8 Mountain (Colorado)", "America/Denver"),
+    ("\U0001F1FA\U0001F1F8 Central (Minnesota)", "America/Chicago"),
+    ("\U0001F1FA\U0001F1F8 Eastern (Florida)", "America/New_York"),
+    ("\U0001F1EC\U0001F1E7 UK", "Europe/London"),
+    ("\U0001F1EA\U0001F1FA Central Europe", "Europe/Berlin"),
+    ("\U0001F1E6\U0001F1FA Sydney", "Australia/Sydney")
 ]
 
 class PopularTimezoneDropdown(Select):
@@ -69,17 +69,27 @@ class PopularTimezoneDropdown(Select):
         save_timezones(timezones)
         await interaction.response.send_message(f"✅ Timezone set to `{selected_tz}`", ephemeral=True)
 
-class AdvancedTimezoneDropdown(Select):
+class TimezoneView(View):
     def __init__(self):
+        super().__init__()
+        self.add_item(PopularTimezoneDropdown())
+        self.add_item(Button(label="📚 Additional Timezones", custom_id="advanced_timezone", style=discord.ButtonStyle.secondary))
+
+class AdvancedTimezoneDropdown(Select):
+    def __init__(self, offset):
+        self.offset = offset
+        timezones = sorted(pytz.common_timezones)
+        self.options_list = timezones[offset:offset + 25]
+
         options = [
             discord.SelectOption(label=tz, value=tz)
-            for tz in sorted(pytz.common_timezones)
+            for tz in self.options_list
         ]
         super().__init__(
-            placeholder="Choose from all timezones...",
+            placeholder=f"Showing {offset + 1}-{offset + len(options)} of {len(timezones)} timezones...",
             min_values=1,
             max_values=1,
-            options=options[:25]  # Discord limit: up to 25 options per menu
+            options=options
         )
 
     async def callback(self, interaction: discord.Interaction):
@@ -90,18 +100,14 @@ class AdvancedTimezoneDropdown(Select):
         await interaction.response.send_message(f"✅ Timezone set to `{selected_tz}`", ephemeral=True)
 
 class AdvancedTimezoneView(View):
-    def __init__(self):
+    def __init__(self, offset=0):
         super().__init__()
-        self.add_item(AdvancedTimezoneDropdown())
-
-class TimezoneView(View):
-    def __init__(self):
-        super().__init__()
-        self.add_item(PopularTimezoneDropdown())
-
-    @discord.ui.button(label="📚 Additional Timezones", style=discord.ButtonStyle.secondary, custom_id="advanced_timezone")
-    async def show_more(self, interaction: discord.Interaction, button: discord.ui.Button):
-        await interaction.response.send_message("🌐 Select from additional timezones:", view=AdvancedTimezoneView(), ephemeral=True)
+        self.offset = offset
+        self.add_item(AdvancedTimezoneDropdown(offset))
+        if offset > 0:
+            self.add_item(Button(label="⬅️ Previous", custom_id="prev_page", style=discord.ButtonStyle.primary))
+        if offset + 25 < len(pytz.common_timezones):
+            self.add_item(Button(label="➡️ Next", custom_id="next_page", style=discord.ButtonStyle.primary))
         
 # ------------------- EVENTS -------------------
 
