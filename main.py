@@ -39,12 +39,19 @@ def save_timezones(data):
 
 @bot.event
 async def on_ready():
-    synced = await bot.tree.sync(guild=discord.Object(id=GUILD_ID))
-    print(f"🔧 Synced {len(synced)} commands to test guild: {[cmd.name for cmd in synced]}")
+    if TEST_MODE_ENABLED:
+        # Fast sync to your dev/test server only
+        await bot.tree.sync(guild=discord.Object(id=YOUR_GUILD_ID))
+        print(f"✅ Synced commands to test guild {YOUR_GUILD_ID}")
+    else:
+        # Global sync for production (can take up to 1 hour to propagate)
+        await bot.tree.sync()
+        print("🌐 Synced global commands")
+
+    print(f"✅ Logged in as {bot.user}")
     weekly_reminder.start()
 
     if TEST_MODE_ENABLED:
-        print("🧪 Test mode is ON — awaiting manual command to start test loop.")
         try:
             owner = await bot.fetch_user(OWNER_ID)
             if owner:
