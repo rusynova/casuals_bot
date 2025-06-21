@@ -41,11 +41,11 @@ def save_timezones(data):
 
 POPULAR_TIMEZONES = [
     "America/Colorado",
+    "America/Florida",
     "America/Los_Angeles",
     "America/Minesotta",
     "America/New_York",
     "America/Oregon",
-    "America/Florida",
     "Europe/London",
     "Europe/Berlin",
     "Asia/Tokyo",
@@ -267,8 +267,12 @@ async def time_command(interaction: discord.Interaction, time: str):
     await interaction.response.send_message(msg)
 
     zones = [
+        ("🇺🇸 Pacific", "America/Colorado"),
+        ("🇺🇸 Pacific", "America/Florida"),
         ("🇺🇸 Pacific", "America/Los_Angeles"),
+        ("🇺🇸 Pacific", "America/Minesotta"),
         ("🇺🇸 Eastern", "America/New_York"),
+        ("🇺🇸 Pacific", "America/Oregon"),
         ("🇬🇧 UK", "Europe/London"),
         ("🇪🇺 Central Europe", "Europe/Berlin"),
         ("🇦🇺 Sydney", "Australia/Sydney")
