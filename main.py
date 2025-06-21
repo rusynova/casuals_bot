@@ -140,6 +140,7 @@ async def on_ready():
     synced = await bot.tree.sync()
     print(f"✅ Logged in as {bot.user}")
     weekly_reminder.start()
+    update_clock_channel.start()
 
     if TEST_MODE_ENABLED:
         try:
@@ -174,6 +175,16 @@ async def test_reminder():
         with open("maplestory_weekly_reset_additional.png", "rb") as f:
             picture = discord.File(f)
             await channel.send("🧪 Test Reminder Loop Active! 🗓️ Weekly Reset tomorrow! Get your shit done. <@&1385701226158620672>", file=picture)
+
+@tasks.loop(minutes=1)
+async def update_clock_channel():
+    for guild in bot.guilds:
+        for channel in guild.voice_channels:
+            if channel.name.startswith("🕒 UTC:"):
+                now = datetime.utcnow().strftime("%-I:%M%p").lower()
+                new_name = f"🕒 UTC: {now}"
+                if channel.name != new_name:
+                    await channel.edit(name=new_name)
 
 # ------------------- SLASH COMMANDS -------------------
 
@@ -295,6 +306,25 @@ async def time_command(interaction: discord.Interaction, time: str):
         embed.add_field(name=label, value=z_time.strftime("%A, %B %d • %I:%M %p"), inline=False)
 
     await interaction.followup.send(embed=embed)
+
+@bot.tree.command(name="create_clock_channel", description="Create a locked voice channel that shows current UTC time")
+async def create_clock_channel(interaction: discord.Interaction):
+    if not interaction.user.guild_permissions.manage_channels:
+        await interaction.response.send_message("❌ You need 'Manage Channels' permission.", ephemeral=True)
+        return
+
+    guild = interaction.guild
+    overwrites = {
+        guild.default_role: discord.PermissionOverwrite(connect=False)
+    }
+
+    existing = discord.utils.get(guild.voice_channels, name__startswith="🕒 UTC:")
+    if existing:
+        await interaction.response.send_message("⏱️ Clock voice channel already exists.", ephemeral=True)
+        return
+
+    channel = await guild.create_voice_channel("🕒 UTC: Loading...", overwrites=overwrites)
+    await interaction.response.send_message(f"✅ Clock voice channel created: {channel.mention}", ephemeral=True)
 
 # ------------------- ERROR HANDLING -------------------
 
