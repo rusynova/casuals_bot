@@ -4,10 +4,11 @@ import traceback
 import requests
 import asyncio
 import json
+import pytz
 from datetime import datetime
 from discord.ext import commands, tasks
 from discord import app_commands
-import pytz
+from discor.ui import View, Select
 from dateutil import parser
 
 # ------------------- CONFIG -------------------
@@ -22,6 +23,7 @@ CHANNEL_ID = 1252318623087722538
 TEST_MODE_ENABLED = os.getenv("TEST_MODE", "false").lower() == "true"
 TIMEZONE_FILE = "user_timezones.json"
 GUILD_ID = 401584720288153600
+TIMEZONE_FILE = "user_timezones.json"
 
 # ------------------- UTILITY FUNCTIONS -------------------
 
@@ -35,17 +37,38 @@ def save_timezones(data):
     with open(TIMEZONE_FILE, "w") as f:
         json.dump(data, f, indent=4)
 
+# ------------------- TIMEZONE DROPDOWN -------------------
+
+class TimezoneDropdown(discord.ui.Select):
+    def __init__(self):
+        options = [
+            discord.SelectOption(label=tz, value=tz)
+            for tz in pytz.common_timezones[:25]
+        ]
+        super().__init__(
+            placeholder="Choose your timezone...",
+            min_values=1,
+            max_values=1,
+            options=options
+        )
+
+    async def callback(self, interaction: discord.Interaction):
+        selected_tz = self.values[0]
+        timezones = load_timezones()
+        timezones[str(interaction.user.id)] = selected_tz
+        save_timezones(timezones)
+        await interaction.response.send_message(f"✅ Timezone set to `{selected_tz}`", ephemeral=True)
+
+class TimezoneView(discord.ui.View):
+    def __init__(self):
+        super().__init__()
+        self.add_item(TimezoneDropdown())
+
 # ------------------- EVENTS -------------------
 
 @bot.event
 async def on_ready():
-    try:
-        await bot.tree.clear_commands(guild=discord.Object(id=123456789012345678))
-        await bot.tree.sync()
-        print("✅ Synced global commands")
-    except Exception as e:
-        print(f"❌ Sync error: {e}")
-
+    synced = await bot.tree.sync()
     print(f"✅ Logged in as {bot.user}")
     weekly_reminder.start()
 
@@ -140,22 +163,12 @@ async def clean_command(interaction: discord.Interaction, amount: int):
     await asyncio.sleep(10)
     await confirmation.delete()
 
-@bot.tree.command(name="settimezone", description="Set your timezone (e.g. America/New_York)", guild=discord.Object(id=GUILD_ID))
-@app_commands.describe(tz="Timezone name")
-async def set_timezone(interaction: discord.Interaction, tz: str):
-    try:
-        pytz.timezone(tz)
-    except pytz.UnknownTimeZoneError:
-        await interaction.response.send_message("❌ Invalid timezone. Use format like America/New_York", ephemeral=True)
-        return
-
-    timezones = load_timezones()
-    timezones[str(interaction.user.id)] = tz
-    save_timezones(timezones)
-    await interaction.response.send_message(f"✅ Timezone set to `{tz}`", ephemeral=True)
+@bot.tree.command(name="settimezone", description="Set your timezone via dropdown menu")
+async def set_timezone(interaction: discord.Interaction):
+    await interaction.response.send_message("🌍 Select your timezone:", view=TimezoneView(), ephemeral=True)
 
 @bot.tree.command(name="time", description="Convert a time to your timezone")
-@app_commands.describe(time="Example: 'June 22 7pm' or 'tomorrow 3pm'")
+@app_commands.describe(time="Example: '5pm PST' or 'June 22 7pm' or 'tomorrow 3pm'")
 async def time_command(interaction: discord.Interaction, time: str):
     timezones = load_timezones()
     user_id = str(interaction.user.id)
@@ -189,7 +202,6 @@ async def time_command(interaction: discord.Interaction, time: str):
 
     await interaction.response.send_message(msg)
 
-    # Format output across major zones
     zones = [
         ("🇺🇸 Pacific", "America/Los_Angeles"),
         ("🇺🇸 Eastern", "America/New_York"),
@@ -203,7 +215,7 @@ async def time_command(interaction: discord.Interaction, time: str):
         z_time = dt_utc.astimezone(pytz.timezone(z))
         embed.add_field(name=label, value=z_time.strftime("%A, %B %d • %I:%M %p"), inline=False)
 
-    await interaction.response.send_message(embed=embed)
+    await interaction.followup.send(embed=embed)
 
 # ------------------- ERROR HANDLING -------------------
 
