@@ -25,7 +25,6 @@ TIMEZONE_FILE = "user_timezones.json"
 GUILD_ID = 401584720288153600
 TIMEZONE_FILE = "user_timezones.json"
 current_time = datetime.now(timezone.utc).strftime("%-I:%M%p").lower()
-last_clock_names = {}
 
 # ------------------- UTILITY FUNCTIONS -------------------
 
@@ -181,7 +180,7 @@ async def test_reminder():
             await channel.send("🧪 Test Reminder Loop Active! 🗓️ Weekly Reset tomorrow! Get your shit done. <@&1385701226158620672>", file=picture)
             
 # UTC Clock task
-@tasks.loop(minutes=5)
+@tasks.loop(minutes=6)  # Use a safe interval to stay under rate limits
 async def update_clock_channel():
     current_time = datetime.now(timezone.utc).strftime("%-I:%M%p").lower()
     new_name = f"🕒 UTC: {current_time}"
@@ -189,14 +188,14 @@ async def update_clock_channel():
     for guild in bot.guilds:
         for channel in guild.voice_channels:
             if channel.name.startswith("🕒 UTC:"):
-                last_name = last_clock_names.get(channel.id)
-                if last_name != new_name:
+                if channel.name != new_name:
                     try:
                         await channel.edit(name=new_name)
-                        last_clock_names[channel.id] = new_name
                         print(f"✅ Updated channel {channel.name} to {new_name}")
                     except discord.HTTPException as e:
                         print(f"⚠️ Failed to update {channel.name}: {e}")
+                else:
+                    print(f"⏱️ Skipped update — channel already set to {new_name}")
 
 # ------------------- SLASH COMMANDS -------------------
 
