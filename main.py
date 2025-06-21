@@ -40,8 +40,8 @@ def save_timezones(data):
 @bot.event
 async def on_ready():
     try:
-        bot.tree.clear_commands(guild=discord.Object(id=GUILD_ID))  # temp if you used guild commands before
-        await bot.tree.sync()  # for global
+        await bot.tree.clear_commands(guild=discord.Object(id=123456789012345678))
+        await bot.tree.sync()
         print("✅ Synced global commands")
     except Exception as e:
         print(f"❌ Sync error: {e}")
