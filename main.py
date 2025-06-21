@@ -3,9 +3,12 @@ import discord
 import traceback
 import requests
 import asyncio
+import json
 from datetime import datetime
 from discord.ext import commands, tasks
 from discord import app_commands
+import pytz
+from dateutil import parser
 
 # ------------------- CONFIG -------------------
 
@@ -16,8 +19,20 @@ DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
 DISCORD_WEBHOOK = os.getenv("DISCORD_WEBHOOK")
 OWNER_ID = 162729945213173761
 CHANNEL_ID = 1252318623087722538
-#CHANNEL_ID = 1385026885615882461 (joshua's personal discord)
 TEST_MODE_ENABLED = os.getenv("TEST_MODE", "false").lower() == "true"
+TIMEZONE_FILE = "user_timezones.json"
+
+# ------------------- UTILITY FUNCTIONS -------------------
+
+def load_timezones():
+    if not os.path.exists(TIMEZONE_FILE):
+        return {}
+    with open(TIMEZONE_FILE, "r") as f:
+        return json.load(f)
+
+def save_timezones(data):
+    with open(TIMEZONE_FILE, "w") as f:
+        json.dump(data, f, indent=4)
 
 # ------------------- EVENTS -------------------
 
@@ -43,7 +58,7 @@ async def on_ready():
 @tasks.loop(minutes=1)
 async def weekly_reminder():
     now = datetime.now()
-    if now.weekday() == 1 and now.hour == 17 and now.minute == 0: #tuesday @ 5pm PST
+    if now.weekday() == 1 and now.hour == 17 and now.minute == 0: # Tuesday @ 5pm PST
         channel = bot.get_channel(CHANNEL_ID)
         if channel:
             with open("maplestory_weekly_reset_additional.png", "rb") as f:
@@ -113,12 +128,60 @@ async def clean_command(interaction: discord.Interaction, amount: int):
         await interaction.response.send_message("❌ You need Manage Messages permission.", ephemeral=True)
         return
 
-    await interaction.response.defer()  # ✅ Acknowledge the command immediately
-
+    await interaction.response.defer()
     deleted = await interaction.channel.purge(limit=amount + 1)
     confirmation = await interaction.followup.send(f"🧹 Deleted {len(deleted) - 1} messages.")
     await asyncio.sleep(10)
     await confirmation.delete()
+
+@bot.tree.command(name="settimezone", description="Set your timezone (e.g. America/New_York)")
+@app_commands.describe(tz="Timezone name")
+async def set_timezone(interaction: discord.Interaction, tz: str):
+    try:
+        pytz.timezone(tz)
+    except pytz.UnknownTimeZoneError:
+        await interaction.response.send_message("❌ Invalid timezone. Use format like America/New_York", ephemeral=True)
+        return
+
+    timezones = load_timezones()
+    timezones[str(interaction.user.id)] = tz
+    save_timezones(timezones)
+    await interaction.response.send_message(f"✅ Timezone set to `{tz}`", ephemeral=True)
+
+@bot.tree.command(name="time", description="Convert a time to your timezone")
+@app_commands.describe(time="Example: '5pm PST' or 'June 22 7pm' or 'tomorrow 3pm'")
+async def time_command(interaction: discord.Interaction, time: str):
+    timezones = load_timezones()
+    user_id = str(interaction.user.id)
+
+    if user_id not in timezones:
+        await interaction.response.send_message("⚠️ You need to set your timezone first using `/settimezone`", ephemeral=True)
+        return
+
+    try:
+        dt_naive = parser.parse(time, fuzzy=True)
+        tz = pytz.timezone(timezones[user_id])
+        dt_localized = tz.localize(dt_naive)
+        dt_utc = dt_localized.astimezone(pytz.utc)
+    except Exception as e:
+        await interaction.response.send_message("❌ Failed to parse time. Try 'June 22 7pm' or 'tomorrow 5pm'", ephemeral=True)
+        return
+
+    # Format output across major zones
+    zones = [
+        ("🇺🇸 Pacific", "America/Los_Angeles"),
+        ("🇺🇸 Eastern", "America/New_York"),
+        ("🇬🇧 UK", "Europe/London"),
+        ("🇪🇺 Central Europe", "Europe/Berlin"),
+        ("🇦🇺 Sydney", "Australia/Sydney")
+    ]
+
+    embed = discord.Embed(title="🕒 Time Conversion", description=f"Original: `{time}`", color=0x00ffcc)
+    for label, z in zones:
+        z_time = dt_utc.astimezone(pytz.timezone(z))
+        embed.add_field(name=label, value=z_time.strftime("%A, %B %d • %I:%M %p"), inline=False)
+
+    await interaction.response.send_message(embed=embed)
 
 # ------------------- ERROR HANDLING -------------------
 
