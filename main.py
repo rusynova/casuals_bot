@@ -69,12 +69,6 @@ class PopularTimezoneDropdown(Select):
         save_timezones(timezones)
         await interaction.response.send_message(f"✅ Timezone set to `{selected_tz}`", ephemeral=True)
 
-class TimezoneView(View):
-    def __init__(self):
-        super().__init__()
-        self.add_item(PopularTimezoneDropdown())
-        self.add_item(discord.ui.Button(label="📚 Additional Timezones", custom_id="advanced_timezone", style=discord.ButtonStyle.secondary))
-
 class AdvancedTimezoneDropdown(Select):
     def __init__(self):
         options = [
@@ -85,7 +79,7 @@ class AdvancedTimezoneDropdown(Select):
             placeholder="Choose from all timezones...",
             min_values=1,
             max_values=1,
-            options=options[:25]  # First 25 only shown due to Discord limits
+            options=options[:25]  # Discord limit: up to 25 options per menu
         )
 
     async def callback(self, interaction: discord.Interaction):
@@ -99,6 +93,15 @@ class AdvancedTimezoneView(View):
     def __init__(self):
         super().__init__()
         self.add_item(AdvancedTimezoneDropdown())
+
+class TimezoneView(View):
+    def __init__(self):
+        super().__init__()
+        self.add_item(PopularTimezoneDropdown())
+
+    @discord.ui.button(label="📚 Additional Timezones", style=discord.ButtonStyle.secondary, custom_id="advanced_timezone")
+    async def show_more(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.send_message("🌐 Select from additional timezones:", view=AdvancedTimezoneView(), ephemeral=True)
         
 # ------------------- EVENTS -------------------
 
