@@ -41,16 +41,19 @@ def save_timezones(data):
 
 class TimezoneDropdown(discord.ui.Select):
     def __init__(self):
-        options = [
-            discord.SelectOption(label=tz, value=tz)
-            for tz in pytz.common_timezones[:25]
-        ]
-        super().__init__(
-            placeholder="Choose your timezone...",
-            min_values=1,
-            max_values=1,
-            options=options
-        )
+      preferred_timezones = [
+    "America/Los_Angeles", "America/New_York", "America/Chicago", "America/Denver",
+    "Europe/London", "Europe/Paris", "Europe/Berlin",
+    "Asia/Tokyo", "Asia/Seoul", "Asia/Singapore",
+    "Australia/Sydney", "Australia/Melbourne",
+    "Pacific/Auckland",
+    "UTC"
+]
+
+options = [
+    discord.SelectOption(label=tz.replace("_", " "), value=tz)
+    for tz in preferred_timezones
+]
 
     async def callback(self, interaction: discord.Interaction):
         selected_tz = self.values[0]
@@ -108,6 +111,7 @@ async def test_reminder():
 
 # ------------------- SLASH COMMANDS -------------------
 
+# TEST COMMAND 
 @bot.tree.command(name="test", description="Send a test MapleStory weekly reset image")
 async def test_command(interaction: discord.Interaction):
     try:
@@ -118,6 +122,7 @@ async def test_command(interaction: discord.Interaction):
         print(f"❌ Error: {e}")
         await interaction.response.send_message("Failed to load image.", ephemeral=True)
 
+# TOGGLE TEST COMMAND
 @bot.tree.command(name="toggle_test", description="Toggle test mode on or off")
 async def toggle_test_command(interaction: discord.Interaction):
     global TEST_MODE_ENABLED
@@ -141,6 +146,7 @@ async def toggle_test_command(interaction: discord.Interaction):
 
     await interaction.response.send_message(msg)
 
+# STATUS COMMAND
 @bot.tree.command(name="status", description="Check if test mode is currently active")
 async def status_command(interaction: discord.Interaction):
     if interaction.user.id != OWNER_ID:
@@ -150,6 +156,7 @@ async def status_command(interaction: discord.Interaction):
     msg = "🧪 Test mode is currently **ON** ✅" if TEST_MODE_ENABLED else "🛑 Test mode is currently **OFF**"
     await interaction.response.send_message(msg, ephemeral=True)
 
+# CLEAN COMMAND
 @bot.tree.command(name="clean", description="Clean up a number of recent messages in this channel")
 @app_commands.describe(amount="Number of messages to delete")
 async def clean_command(interaction: discord.Interaction, amount: int):
@@ -163,10 +170,12 @@ async def clean_command(interaction: discord.Interaction, amount: int):
     await asyncio.sleep(10)
     await confirmation.delete()
 
+# SET TIME ZONE COMMAND
 @bot.tree.command(name="settimezone", description="Set your timezone via dropdown menu")
 async def set_timezone(interaction: discord.Interaction):
     await interaction.response.send_message("🌍 Select your timezone:", view=TimezoneView(), ephemeral=True)
-
+    
+# TIME COMAMND
 @bot.tree.command(name="time", description="Convert a time to your timezone")
 @app_commands.describe(time="Example: '5pm PST' or 'June 22 7pm' or 'tomorrow 3pm'")
 async def time_command(interaction: discord.Interaction, time: str):
