@@ -5,7 +5,7 @@ import requests
 import asyncio
 import json
 import pytz
-from datetime import datetime
+from datetime import datetime, timzone
 from discord.ext import commands, tasks
 from discord import app_commands
 from discord.ui import View, Select, Button
@@ -24,6 +24,7 @@ TEST_MODE_ENABLED = os.getenv("TEST_MODE", "false").lower() == "true"
 TIMEZONE_FILE = "user_timezones.json"
 GUILD_ID = 401584720288153600
 TIMEZONE_FILE = "user_timezones.json"
+now = datetime.now(timezone.utc).strftime("%-I:%M%p").lower()
 
 # ------------------- UTILITY FUNCTIONS -------------------
 
@@ -181,9 +182,9 @@ async def update_clock_channel():
     for guild in bot.guilds:
         for channel in guild.voice_channels:
             if channel.name.startswith("🕒 UTC:"):
-                now = datetime.utcnow().strftime("%-I:%M%p").lower()
+                now = datetime.now(timezone.utc).strftime("%-I:%M%p").lower()
                 new_name = f"🕒 UTC: {now}"
-                if channel.name != new_name:
+                if channel.name != new_name:  # Only update if it's different
                     await channel.edit(name=new_name)
 
 # ------------------- SLASH COMMANDS -------------------
