@@ -3,3 +3,6 @@ python-dotenv
 requests
 pytz
 python-dateutil
+git add requirements.txt
+git commit -m "Add pytz and dateutil for /time command"
+git push
