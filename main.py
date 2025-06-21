@@ -37,48 +37,90 @@ def save_timezones(data):
     with open(TIMEZONE_FILE, "w") as f:
         json.dump(data, f, indent=4)
 
-# ------------------- TIMEZONE PAGINATED DROPDOWN -------------------
+# ------------------- TIMEZONE UI -------------------
 
-TIMEZONE_PAGES = [pytz.common_timezones[i:i + 25] for i in range(0, len(pytz.common_timezones), 25)]
+POPULAR_TIMEZONES = [
+    "America/Colorado",
+    "America/Los_Angeles",
+    "America/Minesotta",
+    "America/New_York",
+    "America/Oregon",
+    "America/Florida",
+    "Europe/London",
+    "Europe/Berlin",
+    "Asia/Tokyo",
+    "Asia/Seoul",
+    "Asia/Singapore",
+    "Australia/Sydney"
+]
 
-class TimezoneDropdown(discord.ui.Select):
+class PopularTimezoneDropdown(discord.ui.Select):
+    def __init__(self):
+        options = [
+            discord.SelectOption(label=tz, value=tz) for tz in POPULAR_TIMEZONES
+        ]
+        options.append(discord.SelectOption(label="➕ Additional Timezones", value="show_advanced"))
+        super().__init__(placeholder="Choose your timezone...", min_values=1, max_values=1, options=options)
+
+    async def callback(self, interaction: discord.Interaction):
+        if self.values[0] == "show_advanced":
+            await interaction.response.edit_message(content="🌍 Select from additional timezones:", view=AdvancedTimezoneView(page=0))
+            return
+
+        selected_tz = self.values[0]
+        timezones = load_timezones()
+        timezones[str(interaction.user.id)] = selected_tz
+        save_timezones(timezones)
+        await interaction.response.send_message(f"✅ Timezone set to `{selected_tz}`", ephemeral=True)
+
+class PopularTimezoneView(discord.ui.View):
+    def __init__(self):
+        super().__init__()
+        self.add_item(PopularTimezoneDropdown())
+
+class AdvancedTimezoneDropdown(discord.ui.Select):
     def __init__(self, page: int):
         self.page = page
-        options = [discord.SelectOption(label=tz, value=tz) for tz in TIMEZONE_PAGES[page]]
-        super().__init__(placeholder=f"Page {page + 1} — Select your timezone", options=options, min_values=1, max_values=1)
+        all_zones = pytz.common_timezones
+        self.zones_per_page = 25
+        self.total_pages = (len(all_zones) - 1) // self.zones_per_page + 1
+        self.current_zones = all_zones[page * self.zones_per_page : (page + 1) * self.zones_per_page]
+
+        options = [discord.SelectOption(label=tz, value=tz) for tz in self.current_zones]
+        super().__init__(placeholder=f"Page {page + 1} of {self.total_pages}", min_values=1, max_values=1, options=options)
 
     async def callback(self, interaction: discord.Interaction):
         selected_tz = self.values[0]
         timezones = load_timezones()
         timezones[str(interaction.user.id)] = selected_tz
         save_timezones(timezones)
-        await interaction.response.edit_message(content=f"✅ Timezone set to `{selected_tz}`", view=None)
+        await interaction.response.send_message(f"✅ Timezone set to `{selected_tz}`", ephemeral=True)
 
-class TimezoneView(discord.ui.View):
-    def __init__(self, page: int = 0):
-        super().__init__(timeout=60)
+class AdvancedTimezoneView(discord.ui.View):
+    def __init__(self, page=0):
+        super().__init__()
         self.page = page
-        self.add_item(TimezoneDropdown(page))
+        self.add_item(AdvancedTimezoneDropdown(page))
         if page > 0:
-            self.add_item(self.BackButton(page))
-        if page < len(TIMEZONE_PAGES) - 1:
-            self.add_item(self.NextButton(page))
+            self.add_item(PreviousPageButton(page))
+        if (page + 1) * 25 < len(pytz.common_timezones):
+            self.add_item(NextPageButton(page))
 
-    class NextButton(discord.ui.Button):
-        def __init__(self, page):
-            super().__init__(label="Next ▶", style=discord.ButtonStyle.primary)
-            self.page = page
+class NextPageButton(discord.ui.Button):
+    def __init__(self, current_page):
+        super().__init__(label="➡️ Next", style=discord.ButtonStyle.primary)
+        self.current_page = current_page
 
-        async def callback(self, interaction: discord.Interaction):
-            await interaction.response.edit_message(view=TimezoneView(self.page + 1))
+    async def callback(self, interaction: discord.Interaction):
+        await interaction.response.edit_message(view=AdvancedTimezoneView(page=self.current_page + 1))
 
-    class BackButton(discord.ui.Button):
-        def __init__(self, page):
-            super().__init__(label="◀ Back", style=discord.ButtonStyle.secondary)
-            self.page = page
+class PreviousPageButton(discord.ui.Button):
+    def __init__(self, current_page):
+        super().__init__(label="⬅️ Back", style=discord.ButtonStyle.secondary)
+        self.current_page = current_page
 
-        async def callback(self, interaction: discord.Interaction):
-            await interaction.response.edit_message(view=TimezoneView(self.page - 1))
+    async def callback(self, interaction: discord.Interaction):
+        await interaction.response.edit_message(view=AdvancedTimezoneView(page=self.current_page - 1))
 
 # ------------------- EVENTS -------------------
 
