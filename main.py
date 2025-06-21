@@ -39,9 +39,8 @@ def save_timezones(data):
 
 # ------------------- TIMEZONE DROPDOWN -------------------
 
-class TimezoneDropdown(discord.ui.Select):
+class CuratedTimezoneDropdown(discord.ui.Select):
     def __init__(self):
-        # Curated and user-friendly timezone list
         preferred_timezones = [
             "America/Los_Angeles", "America/Denver", "America/Chicago", "America/New_York",
             "Europe/London", "Europe/Paris", "Europe/Berlin",
@@ -52,14 +51,12 @@ class TimezoneDropdown(discord.ui.Select):
 
         options = [
             discord.SelectOption(
-                label=tz.replace("_", " "),  # Show "Los Angeles" instead of "Los_Angeles"
-                value=tz
-            )
-            for tz in preferred_timezones
+                label=tz.replace("_", " "), value=tz
+            ) for tz in preferred_timezones
         ]
 
         super().__init__(
-            placeholder="🌍 Choose your timezone...",
+            placeholder="🌍 Choose a common timezone...",
             min_values=1,
             max_values=1,
             options=options
@@ -71,6 +68,54 @@ class TimezoneDropdown(discord.ui.Select):
         timezones[str(interaction.user.id)] = selected_tz
         save_timezones(timezones)
         await interaction.response.send_message(f"✅ Timezone set to `{selected_tz}`", ephemeral=True)
+
+
+class AdvancedTimezoneDropdown(discord.ui.Select):
+    def __init__(self):
+        options = [
+            discord.SelectOption(
+                label=tz.replace("_", " "), value=tz
+            ) for tz in pytz.common_timezones[:25]  # Limit due to Discord UI restrictions
+        ]
+
+        super().__init__(
+            placeholder="🌐 Browse more timezones...",
+            min_values=1,
+            max_values=1,
+            options=options
+        )
+
+    async def callback(self, interaction: discord.Interaction):
+        selected_tz = self.values[0]
+        timezones = load_timezones()
+        timezones[str(interaction.user.id)] = selected_tz
+        save_timezones(timezones)
+        await interaction.response.send_message(f"✅ Timezone set to `{selected_tz}`", ephemeral=True)
+
+
+class TimezoneView(discord.ui.View):
+    def __init__(self):
+        super().__init__(timeout=60)
+        self.add_item(CuratedTimezoneDropdown())
+        self.add_item(AdvancedTimezoneButton())
+
+
+class AdvancedTimezoneButton(discord.ui.Button):
+    def __init__(self):
+        super().__init__(label="Show Advanced Timezones", style=discord.ButtonStyle.secondary)
+
+    async def callback(self, interaction: discord.Interaction):
+        await interaction.response.send_message(
+            "🔍 Select from full timezone list (first 25):",
+            view=AdvancedTimezoneView(),
+            ephemeral=True
+        )
+
+
+class AdvancedTimezoneView(discord.ui.View):
+    def __init__(self):
+        super().__init__(timeout=60)
+        self.add_item(AdvancedTimezoneDropdown())
 
 # ------------------- EVENTS -------------------
 
