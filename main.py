@@ -37,6 +37,48 @@ def save_timezones(data):
     with open(TIMEZONE_FILE, "w") as f:
         json.dump(data, f, indent=4)
 
+#------------------- PAGINATED TIMEZONES ------------------
+
+class PaginatedTimezoneDropdown(Select):
+    def __init__(self, page=0):
+        self.timezones = sorted(pytz.common_timezones)
+        self.page = page
+        per_page = 25
+        start = page * per_page
+        end = start + per_page
+
+        options = [
+            discord.SelectOption(label=tz, value=tz)
+            for tz in self.timezones[start:end]
+        ]
+
+        super().__init__(
+            placeholder=f"Select timezone (Page {page + 1})",
+            min_values=1,
+            max_values=1,
+            options=options,
+            custom_id=f"timezone_select_{page}"
+        )
+
+    async def callback(self, interaction: discord.Interaction):
+        selected_tz = self.values[0]
+        timezones = load_timezones()
+        timezones[str(interaction.user.id)] = selected_tz
+        save_timezones(timezones)
+        await interaction.response.send_message(f"✅ Timezone set to `{selected_tz}`", ephemeral=True)
+
+class PaginatedTimezoneView(View):
+    def __init__(self, page=0):
+        super().__init__()
+        self.page = page
+        self.max_pages = (len(pytz.common_timezones) - 1) // 25
+        self.add_item(PaginatedTimezoneDropdown(page))
+
+        if self.page > 0:
+            self.add_item(Button(label="⬅️ Prev", style=discord.ButtonStyle.secondary, custom_id="prev_page"))
+        if self.page < self.max_pages:
+            self.add_item(Button(label="➡️ Next", style=discord.ButtonStyle.secondary, custom_id="next_page"))
+
 # ------------------- TIMEZONE DROPDOWNS -------------------
 
 POPULAR_TIMEZONES = [
@@ -75,39 +117,21 @@ class TimezoneView(View):
         self.add_item(PopularTimezoneDropdown())
         self.add_item(Button(label="📚 Additional Timezones", custom_id="advanced_timezone", style=discord.ButtonStyle.secondary))
 
-class AdvancedTimezoneDropdown(Select):
-    def __init__(self, offset):
-        self.offset = offset
-        timezones = sorted(pytz.common_timezones)
-        self.options_list = timezones[offset:offset + 25]
+# ------------------- INTERACTION HANDLING -------------------
 
-        options = [
-            discord.SelectOption(label=tz, value=tz)
-            for tz in self.options_list
-        ]
-        super().__init__(
-            placeholder=f"Showing {offset + 1}-{offset + len(options)} of {len(timezones)} timezones...",
-            min_values=1,
-            max_values=1,
-            options=options
-        )
-
-    async def callback(self, interaction: discord.Interaction):
-        selected_tz = self.values[0]
-        timezones = load_timezones()
-        timezones[str(interaction.user.id)] = selected_tz
-        save_timezones(timezones)
-        await interaction.response.send_message(f"✅ Timezone set to `{selected_tz}`", ephemeral=True)
-
-class AdvancedTimezoneView(View):
-    def __init__(self, offset=0):
-        super().__init__()
-        self.offset = offset
-        self.add_item(AdvancedTimezoneDropdown(offset))
-        if offset > 0:
-            self.add_item(Button(label="⬅️ Previous", custom_id="prev_page", style=discord.ButtonStyle.primary))
-        if offset + 25 < len(pytz.common_timezones):
-            self.add_item(Button(label="➡️ Next", custom_id="next_page", style=discord.ButtonStyle.primary))
+@bot.event
+async def on_interaction(interaction: discord.Interaction):
+    if interaction.type == discord.InteractionType.component:
+        custom_id = interaction.data.get("custom_id")
+        if custom_id == "advanced_timezone":
+            await interaction.response.send_message("🌍 Select from all timezones:", view=PaginatedTimezoneView(), ephemeral=True)
+        elif custom_id in ("next_page", "prev_page"):
+            try:
+                current_page = int(interaction.message.components[0].children[0].custom_id.split("_")[-1])
+                new_page = current_page + 1 if custom_id == "next_page" else current_page - 1
+                await interaction.response.edit_message(view=PaginatedTimezoneView(page=new_page))
+            except Exception as e:
+                await interaction.response.send_message("❌ Failed to paginate timezones.", ephemeral=True)
         
 # ------------------- EVENTS -------------------
 
