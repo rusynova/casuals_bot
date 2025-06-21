@@ -154,8 +154,8 @@ async def set_timezone(interaction: discord.Interaction, tz: str):
     save_timezones(timezones)
     await interaction.response.send_message(f"✅ Timezone set to `{tz}`", ephemeral=True)
 
-@bot.tree.command(name="time", description="Convert a time to your timezone", guild=discord.Object(id=GUILD_ID))
-@app_commands.describe(time="Example: '5pm PST' or 'June 22 7pm' or 'tomorrow 3pm'")
+@bot.tree.command(name="time", description="Convert a time to your timezone")
+@app_commands.describe(time="Example: 'June 22 7pm' or 'tomorrow 3pm'")
 async def time_command(interaction: discord.Interaction, time: str):
     timezones = load_timezones()
     user_id = str(interaction.user.id)
@@ -169,9 +169,25 @@ async def time_command(interaction: discord.Interaction, time: str):
         tz = pytz.timezone(timezones[user_id])
         dt_localized = tz.localize(dt_naive)
         dt_utc = dt_localized.astimezone(pytz.utc)
+        unix_ts = int(dt_utc.timestamp())
     except Exception as e:
         await interaction.response.send_message("❌ Failed to parse time. Try 'June 22 7pm' or 'tomorrow 5pm'", ephemeral=True)
         return
+
+    msg = f"""🕒 **Timestamp Formats**
+**Input:** `{time}`
+**Unix Timestamp:** `{unix_ts}`
+
+> `<t:{unix_ts}:R>` → <t:{unix_ts}:R>  
+> `<t:{unix_ts}:f>` → <t:{unix_ts}:f>  
+> `<t:{unix_ts}:F>` → <t:{unix_ts}:F>  
+> `<t:{unix_ts}:t>` → <t:{unix_ts}:t>  
+> `<t:{unix_ts}:T>` → <t:{unix_ts}:T>  
+> `<t:{unix_ts}:d>` → <t:{unix_ts}:d>  
+> `<t:{unix_ts}:D>` → <t:{unix_ts}:D>  
+"""
+
+    await interaction.response.send_message(msg)
 
     # Format output across major zones
     zones = [
