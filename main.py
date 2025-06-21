@@ -24,7 +24,7 @@ TEST_MODE_ENABLED = os.getenv("TEST_MODE", "false").lower() == "true"
 TIMEZONE_FILE = "user_timezones.json"
 GUILD_ID = 401584720288153600
 TIMEZONE_FILE = "user_timezones.json"
-now = datetime.now(timezone.utc).strftime("%-I:%M%p").lower()
+current_time = datetime.now(timezone.utc).strftime("%-I:%M%p").lower()
 last_update_times = {}
 
 # ------------------- UTILITY FUNCTIONS -------------------
@@ -179,23 +179,24 @@ async def test_reminder():
         with open("maplestory_weekly_reset_additional.png", "rb") as f:
             picture = discord.File(f)
             await channel.send("🧪 Test Reminder Loop Active! 🗓️ Weekly Reset tomorrow! Get your shit done. <@&1385701226158620672>", file=picture)
+            
 # UTC Clock task
 @tasks.loop(minutes=1)
 async def update_clock_channel():
-    now = datetime.now(timezone.utc)
-    now_str = now.strftime("%-I:%M%p").lower()
+    current_time = datetime.now(timezone.utc).strftime("%-I:%M%p").lower()
+    new_name = f"🕒 UTC: {current_time}"
 
     for guild in bot.guilds:
         for channel in guild.voice_channels:
-            if not channel.name.startswith("🕒 UTC:"):
-                continue
-
-            new_name = f"🕒 UTC: {now_str}"
-            last_update = last_update_times.get(channel.id)
-
-            if channel.name != new_name and (not last_update or (now - last_update).total_seconds() > 59):
-                await channel.edit(name=new_name)
-                last_update_times[channel.id] = now
+            if channel.name.startswith("🕒 UTC:"):
+                last_name = last_clock_names.get(channel.id)
+                if last_name != new_name:
+                    try:
+                        await channel.edit(name=new_name)
+                        last_clock_names[channel.id] = new_name
+                        print(f"✅ Updated channel {channel.name} to {new_name}")
+                    except discord.HTTPException as e:
+                        print(f"⚠️ Failed to update {channel.name}: {e}")
 
 # ------------------- SLASH COMMANDS -------------------
 
