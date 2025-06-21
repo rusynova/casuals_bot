@@ -25,6 +25,7 @@ TIMEZONE_FILE = "user_timezones.json"
 GUILD_ID = 401584720288153600
 TIMEZONE_FILE = "user_timezones.json"
 now = datetime.now(timezone.utc).strftime("%-I:%M%p").lower()
+last_update_times = {}
 
 # ------------------- UTILITY FUNCTIONS -------------------
 
@@ -155,6 +156,7 @@ async def on_ready():
 
 # ------------------- TASKS -------------------
 
+# Weekly reminder task
 @tasks.loop(minutes=1)
 async def weekly_reminder():
     now = datetime.now()
@@ -168,6 +170,7 @@ async def weekly_reminder():
                     file=picture
                 )
 
+# Test Loop task
 @tasks.loop(minutes=4)
 async def test_reminder():
     print("🔁 Test loop running...")
@@ -176,16 +179,23 @@ async def test_reminder():
         with open("maplestory_weekly_reset_additional.png", "rb") as f:
             picture = discord.File(f)
             await channel.send("🧪 Test Reminder Loop Active! 🗓️ Weekly Reset tomorrow! Get your shit done. <@&1385701226158620672>", file=picture)
-
+# UTC Clock task
 @tasks.loop(minutes=1)
 async def update_clock_channel():
+    now = datetime.now(timezone.utc)
+    now_str = now.strftime("%-I:%M%p").lower()
+
     for guild in bot.guilds:
         for channel in guild.voice_channels:
-            if channel.name.startswith("🕒 UTC:"):
-                now = datetime.now(timezone.utc).strftime("%-I:%M%p").lower()
-                new_name = f"🕒 UTC: {now}"
-                if channel.name != new_name:  # Only update if it's different
-                    await channel.edit(name=new_name)
+            if not channel.name.startswith("🕒 UTC:"):
+                continue
+
+            new_name = f"🕒 UTC: {now_str}"
+            last_update = last_update_times.get(channel.id)
+
+            if channel.name != new_name and (not last_update or (now - last_update).total_seconds() > 59):
+                await channel.edit(name=new_name)
+                last_update_times[channel.id] = now
 
 # ------------------- SLASH COMMANDS -------------------
 
