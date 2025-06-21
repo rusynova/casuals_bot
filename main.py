@@ -5,7 +5,7 @@ import requests
 import asyncio
 import json
 import pytz
-from datetime import datetime, timzone
+from datetime import datetime, timezone
 from discord.ext import commands, tasks
 from discord import app_commands
 from discord.ui import View, Select, Button
