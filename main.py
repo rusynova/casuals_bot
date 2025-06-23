@@ -202,20 +202,22 @@ async def update_clock_channel():
 @bot.event
 async def on_ready():
     print(f"✅ Logged in as {bot.user}")
-    
+
     try:
-        guild = discord.Object(id=GUILD_ID)
+        guild = discord.Object(id=GUILD_ID) if GUILD_ID else None
 
-        # Optional cleanup of old slash commands (run once, then comment out)
-        await bot.tree.clear_commands(guild=None)
-        await bot.tree.clear_commands(guild=guild)
-
-        await bot.tree.sync(guild=guild)
-        print("✅ Slash commands cleared and re-synced")
+        # Cleanup only if GUILD_ID exists
+        if guild:
+            await bot.tree.clear_commands(guild=guild)
+            await bot.tree.sync(guild=guild)
+            print("✅ Synced slash commands to guild.")
+        else:
+            await bot.tree.clear_commands()  # Clear global commands
+            await bot.tree.sync()
+            print("✅ Synced slash commands globally.")
     except Exception as e:
         print(f"❌ Error syncing commands: {e}")
 
-    # Start background tasks
     weekly_reminder.start()
     update_clock_channel.start()
 
