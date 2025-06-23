@@ -258,6 +258,25 @@ async def clean_command(interaction: discord.Interaction, amount: int):
     await asyncio.sleep(10)
     await confirmation.delete()
 
+# CLEANING DUPLICATES
+@bot.event
+async def on_ready():
+    print(f"✅ Logged in as {bot.user}")
+
+    guild = discord.Object(id=YOUR_GUILD_ID)  # Replace this with your actual guild ID
+
+    try:
+        # Fully clear slash commands (both global and guild)
+        await bot.tree.clear_commands(guild=None)
+        await bot.tree.clear_commands(guild=guild)
+
+        # Re-sync only the commands you want
+        await bot.tree.sync(guild=guild)  # Or use `guild=None` for global
+
+        print("✅ Commands cleared and re-synced")
+    except Exception as e:
+        print(f"❌ Error syncing commands: {e}")
+
 # SET TIME ZONE COMMAND
 @bot.tree.command(name="settimezone", description="Set your timezone via dropdown menu")
 async def set_timezone(interaction: discord.Interaction):
