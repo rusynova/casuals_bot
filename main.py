@@ -263,7 +263,7 @@ async def clean_command(interaction: discord.Interaction, amount: int):
 async def on_ready():
     print(f"✅ Logged in as {bot.user}")
 
-    guild = discord.Object(id=YOUR_GUILD_ID)  # Replace this with your actual guild ID
+    guild = discord.Object(id=GUILD_ID)  # Replace this with your actual guild ID
 
     try:
         # Fully clear slash commands (both global and guild)
