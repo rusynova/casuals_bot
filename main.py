@@ -199,40 +199,35 @@ async def update_clock_channel():
 
 # ------------------- SLASH COMMANDS -------------------
 
-# TEST COMMAND 
-@bot.tree.command(name="test", description="Send a test MapleStory weekly reset image")
-async def test_command(interaction: discord.Interaction):
+@bot.event
+async def on_ready():
+    print(f"✅ Logged in as {bot.user}")
+    
     try:
-        with open("maplestory_weekly_reset_additional.png", "rb") as f:
-            picture = discord.File(f)
-            await interaction.response.send_message("🧪 Test Reminder Loop Active! 🗓️ Weekly Reset tomorrow! Get your shit done. <@&1385701226158620672>", file=picture)
+        guild = discord.Object(id=GUILD_ID)
+
+        # Optional cleanup of old slash commands (run once, then comment out)
+        await bot.tree.clear_commands(guild=None)
+        await bot.tree.clear_commands(guild=guild)
+
+        await bot.tree.sync(guild=guild)
+        print("✅ Slash commands cleared and re-synced")
     except Exception as e:
-        print(f"❌ Error: {e}")
-        await interaction.response.send_message("Failed to load image.", ephemeral=True)
+        print(f"❌ Error syncing commands: {e}")
 
-# TOGGLE TEST COMMAND
-@bot.tree.command(name="toggle_test", description="Toggle test mode on or off")
-async def toggle_test_command(interaction: discord.Interaction):
-    global TEST_MODE_ENABLED
-
-    if interaction.user.id != OWNER_ID:
-        await interaction.response.send_message("❌ You don’t have permission to do that.", ephemeral=True)
-        return
+    # Start background tasks
+    weekly_reminder.start()
+    update_clock_channel.start()
 
     if TEST_MODE_ENABLED:
-        if test_reminder.is_running():
-            test_reminder.cancel()
-            print("🛑 Test reminder loop canceled.")
-        TEST_MODE_ENABLED = False
-        msg = "🛑 Test mode is now OFF."
+        try:
+            owner = await bot.fetch_user(OWNER_ID)
+            if owner:
+                await owner.send("🧪 Bot is online in TEST MODE. Use `/toggle_test` to start the loop.")
+        except discord.Forbidden:
+            print("⚠️ Couldn't DM the owner on startup.")
     else:
-        if not test_reminder.is_running():
-            test_reminder.start()
-            print("🧪 Test reminder loop started.")
-        TEST_MODE_ENABLED = True
-        msg = "✅ Test mode is now ON."
-
-    await interaction.response.send_message(msg)
+        print("🚀 Production mode active.")
 
 # STATUS COMMAND
 @bot.tree.command(name="status", description="Check if test mode is currently active")
@@ -257,25 +252,6 @@ async def clean_command(interaction: discord.Interaction, amount: int):
     confirmation = await interaction.followup.send(f"🧹 Deleted {len(deleted) - 1} messages.")
     await asyncio.sleep(10)
     await confirmation.delete()
-
-# CLEANING DUPLICATES
-@bot.event
-async def on_ready():
-    print(f"✅ Logged in as {bot.user}")
-
-    guild = discord.Object(id=GUILD_ID)  # Replace this with your actual guild ID
-
-    try:
-        # Fully clear slash commands (both global and guild)
-        await bot.tree.clear_commands(guild=None)
-        await bot.tree.clear_commands(guild=guild)
-
-        # Re-sync only the commands you want
-        await bot.tree.sync(guild=guild)  # Or use `guild=None` for global
-
-        print("✅ Commands cleared and re-synced")
-    except Exception as e:
-        print(f"❌ Error syncing commands: {e}")
 
 # SET TIME ZONE COMMAND
 @bot.tree.command(name="settimezone", description="Set your timezone via dropdown menu")
