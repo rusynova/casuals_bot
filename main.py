@@ -22,7 +22,7 @@ OWNER_ID = 162729945213173761
 CHANNEL_ID = 1385889605194088498
 TEST_MODE_ENABLED = os.getenv("TEST_MODE", "false").lower() == "true"
 TIMEZONE_FILE = "user_timezones.json"
-#GUILD_ID = 401584720288153600
+GUILD_ID = 401584720288153600
 TIMEZONE_FILE = "user_timezones.json"
 current_time = datetime.now(timezone.utc).strftime("%-I:%M%p").lower()
 
