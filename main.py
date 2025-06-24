@@ -138,8 +138,22 @@ async def on_interaction(interaction: discord.Interaction):
 
 @bot.event
 async def on_ready():
-    synced = await bot.tree.sync()
     print(f"✅ Logged in as {bot.user}")
+
+    try:
+        guild = discord.Object(id=GUILD_ID) if GUILD_ID else None
+
+        if guild:
+            await bot.tree.clear_commands(guild=guild)
+            await bot.tree.sync(guild=guild)
+            print("✅ Synced slash commands to guild.")
+        else:
+            await bot.tree.clear_commands()
+            await bot.tree.sync()
+            print("✅ Synced slash commands globally.")
+    except Exception as e:
+        print(f"❌ Error syncing commands: {e}")
+
     weekly_reminder.start()
     update_clock_channel.start()
 
@@ -198,38 +212,6 @@ async def update_clock_channel():
                     print(f"⏱️ Skipped update — channel already set to {new_name}")
 
 # ------------------- SLASH COMMANDS -------------------
-
-@bot.event
-async def on_ready():
-    print(f"✅ Logged in as {bot.user}")
-
-    try:
-        guild = discord.Object(id=GUILD_ID) if GUILD_ID else None
-
-        # Cleanup only if GUILD_ID exists
-        if guild:
-            await bot.tree.clear_commands(guild=guild)
-            await bot.tree.sync(guild=guild)
-            print("✅ Synced slash commands to guild.")
-        else:
-            await bot.tree.clear_commands()  # Clear global commands
-            await bot.tree.sync()
-            print("✅ Synced slash commands globally.")
-    except Exception as e:
-        print(f"❌ Error syncing commands: {e}")
-
-    weekly_reminder.start()
-    update_clock_channel.start()
-
-    if TEST_MODE_ENABLED:
-        try:
-            owner = await bot.fetch_user(OWNER_ID)
-            if owner:
-                await owner.send("🧪 Bot is online in TEST MODE. Use `/toggle_test` to start the loop.")
-        except discord.Forbidden:
-            print("⚠️ Couldn't DM the owner on startup.")
-    else:
-        print("🚀 Production mode active.")
 
 # STATUS COMMAND
 @bot.tree.command(name="status", description="Check if test mode is currently active")
