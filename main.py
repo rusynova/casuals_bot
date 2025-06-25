@@ -141,25 +141,20 @@ async def on_ready():
     print(f"✅ Logged in as {bot.user}")
 
     try:
-        # Clear and sync GLOBAL slash commands only
+        # Optional cleanup for past guild-specific registrations
+        try:
+            guild = discord.Object(id=GUILD_ID)
+            await bot.tree.clear_commands(guild=guild)
+            print("🧹 Cleared old guild commands.")
+        except Exception:
+            pass  # If GUILD_ID isn't valid anymore
+
+        # Clear & sync global commands (your actual prod setup)
         await bot.tree.clear_commands()
         await bot.tree.sync()
-        print("✅ Synced slash commands globally.")
+        print("✅ Synced global slash commands.")
     except Exception as e:
         print(f"❌ Error syncing commands: {e}")
-
-    weekly_reminder.start()
-    update_clock_channel.start()
-
-    if TEST_MODE_ENABLED:
-        try:
-            owner = await bot.fetch_user(OWNER_ID)
-            if owner:
-                await owner.send("🧪 Bot is online in TEST MODE. Use `/toggle_test` to start the loop.")
-        except discord.Forbidden:
-            print("⚠️ Couldn't DM the owner on startup.")
-    else:
-        print("🚀 Production mode active.")
 
 # ------------------- TASKS -------------------
 
