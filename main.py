@@ -139,20 +139,13 @@ async def on_interaction(interaction: discord.Interaction):
 @bot.event
 async def on_ready():
     print(f"✅ Logged in as {bot.user}")
-
+    
+    # Clear and resync commands for a specific guild
+    guild = discord.Object(id=YOUR_GUILD_ID)  # replace with your server's ID
     try:
-        # Optional cleanup for past guild-specific registrations
-        try:
-            guild = discord.Object(id=GUILD_ID)
-            await bot.tree.clear_commands(guild=guild)
-            print("🧹 Cleared old guild commands.")
-        except Exception:
-            pass  # If GUILD_ID isn't valid anymore
-
-        # Clear & sync global commands (your actual prod setup)
-        await bot.tree.clear_commands()
-        await bot.tree.sync()
-        print("✅ Synced global slash commands.")
+        await bot.tree.clear_commands(guild=guild)
+        await bot.tree.sync(guild=guild)
+        print(f"✅ Synced commands to guild {guild.id}")
     except Exception as e:
         print(f"❌ Error syncing commands: {e}")
 
