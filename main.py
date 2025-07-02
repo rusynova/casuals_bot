@@ -148,7 +148,7 @@ async def on_ready():
     # Start background tasks
     if not weekly_reminder.is_running():
         weekly_reminder.start()
-    if not test_reminder.is_running():
+    if TEST_MODE_ENABLED and not test_reminder.is_running():
         test_reminder.start()
     if not update_clock_channel.is_running():
         update_clock_channel.start()
@@ -216,6 +216,15 @@ async def toggle_test(interaction: discord.Interaction):
         return
 
     TEST_MODE_ENABLED = not TEST_MODE_ENABLED
+
+    # Start/Stop the test reminder based on mode
+    if TEST_MODE_ENABLED:
+        if not test_reminder.is_running():
+            test_reminder.start()
+    else:
+        if test_reminder.is_running():
+            test_reminder.cancel()
+
     status = "ON ✅" if TEST_MODE_ENABLED else "OFF 🛑"
     await interaction.response.send_message(f"🧪 Test mode is now **{status}**", ephemeral=True)
 
