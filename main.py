@@ -155,6 +155,13 @@ async def on_ready():
     if not update_clock_channel.is_running():
         update_clock_channel.start()
 
+
+@bot.event
+async def on_ready():
+    ...
+    if not heartbeat.is_running():
+        heartbeat.start()
+
 # ------------------- TASKS -------------------
 
 # Weekly reminder task
@@ -199,7 +206,24 @@ async def update_clock_channel():
                 else:
                     print(f"⏱️ Skipped update — channel already set to {new_name}")
 
+@tasks.loop(minutes=5)
+async def heartbeat():
+    print("❤️ Bot is alive and well.")
+
 # ------------------- SLASH COMMANDS -------------------
+
+#TOGGLE TEST COMMAND
+@bot.tree.command(name="toggle_test", description="Toggle test mode on or off")
+async def toggle_test(interaction: discord.Interaction):
+    global TEST_MODE_ENABLED
+
+    if interaction.user.id != OWNER_ID:
+        await interaction.response.send_message("❌ You don’t have permission to toggle this.", ephemeral=True)
+        return
+
+    TEST_MODE_ENABLED = not TEST_MODE_ENABLED
+    status = "ON ✅" if TEST_MODE_ENABLED else "OFF 🛑"
+    await interaction.response.send_message(f"🧪 Test mode is now **{status}**", ephemeral=True)
 
 # STATUS COMMAND
 @bot.tree.command(name="status", description="Check if test mode is currently active")
@@ -314,9 +338,14 @@ def send_discord_alert(message: str):
         except Exception as e:
             print("❌ Failed to send crash alert:", e)
 
-try:
-    bot.run(DISCORD_TOKEN)
-except Exception as e:
-    print("🚨 BOT CRASHED!")
-    traceback.print_exc()
-    send_discord_alert(str(e))
+async def main():
+    async with bot:
+        await bot.start(DISCORD_TOKEN)
+
+if __name__ == "__main__":
+    try:
+        asyncio.run(main())
+    except Exception as e:
+        print("🚨 BOT CRASHED!")
+        traceback.print_exc()
+        send_discord_alert(str(e))
