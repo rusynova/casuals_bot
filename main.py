@@ -191,7 +191,7 @@ async def test_reminder():
 # UTC Clock task
 @tasks.loop(minutes=6)  # Use a safe interval to stay under rate limits
 async def update_clock_channel():
-    current_time = datetime.now(timezone.utc).strftime("%-I:%M%p").lower()
+    current_time = datetime.now(timezone.utc).strftime("%I:%M%p").lstrip("0").lower()
     new_name = f"🕒 UTC: {current_time}"
 
     for guild in bot.guilds:
