@@ -23,7 +23,6 @@ CHANNEL_ID = 1385889605194088498
 TEST_MODE_ENABLED = os.getenv("TEST_MODE", "false").lower() == "true"
 TIMEZONE_FILE = "user_timezones.json"
 GUILD_ID = 401584720288153600
-TIMEZONE_FILE = "user_timezones.json"
 current_time = datetime.now(timezone.utc).strftime("%-I:%M%p").lower()
 
 # ------------------- UTILITY FUNCTIONS -------------------
@@ -139,7 +138,6 @@ async def on_interaction(interaction: discord.Interaction):
 @bot.event
 async def on_ready():
     print(f"✅ Logged in as {bot.user}")
-
     guild = discord.Object(id=GUILD_ID)
     try:
         await bot.tree.sync(guild=guild)
@@ -154,11 +152,6 @@ async def on_ready():
         test_reminder.start()
     if not update_clock_channel.is_running():
         update_clock_channel.start()
-
-
-@bot.event
-async def on_ready():
-    ...
     if not heartbeat.is_running():
         heartbeat.start()
 
@@ -197,6 +190,7 @@ async def update_clock_channel():
     for guild in bot.guilds:
         for channel in guild.voice_channels:
             if channel.name.startswith("🕒 UTC:"):
+                print(f"🕒 Desired: {new_name} | Current: {channel.name}")
                 if channel.name != new_name:
                     try:
                         await channel.edit(name=new_name)
