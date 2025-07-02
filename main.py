@@ -141,7 +141,7 @@ async def on_ready():
     print(f"✅ Logged in as {bot.user}")
     
     # Clear and resync commands for a specific guild
-    guild = discord.Object(id=YOUR_GUILD_ID)  # replace with your server's ID
+    guild = discord.Object(id=GUILD_ID)  # replace with your server's ID
     try:
         await bot.tree.clear_commands(guild=guild)
         await bot.tree.sync(guild=guild)
