@@ -140,15 +140,20 @@ async def on_interaction(interaction: discord.Interaction):
 async def on_ready():
     print(f"✅ Logged in as {bot.user}")
 
-    guild = discord.Object(id=GUILD_ID)  # Replace with your actual guild ID
-
+    guild = discord.Object(id=GUILD_ID)
     try:
-        # ⚠️ Only do this in development; don't clear in production unless needed
         await bot.tree.sync(guild=guild)
         print(f"✅ Synced commands to guild {guild.id}")
     except Exception as e:
         print(f"❌ Error syncing commands: {e}")
 
+    # Start background tasks
+    if not weekly_reminder.is_running():
+        weekly_reminder.start()
+    if not test_reminder.is_running():
+        test_reminder.start()
+    if not update_clock_channel.is_running():
+        update_clock_channel.start()
 
 # ------------------- TASKS -------------------
 
