@@ -29,6 +29,11 @@ TIMEZONE_FILE = "user_timezones.json"
 GUILD_ID = 401584720288153600
 current_time = datetime.now(timezone.utc).strftime("%-I:%M%p").lower()
 SEEN_MOVIE_IDS = set()
+JELLYFIN_URL = os.getenv("JELLYFIN_URL")
+JELLYFIN_API_KEY = os.getenv("JELLYFIN_API_KEY")
+MOVIES_LIBRARY_ID = os.getenv("MOVIES_LIBRARY_ID")
+MOVIE_ALERT_THREAD_ID = int(os.getenv("MOVIE_ALERT_THREAD_ID"))
+
 
 # ------------------- UTILITY FUNCTIONS -------------------
 
@@ -251,6 +256,53 @@ async def heartbeat():
     print("❤️ Bot is alive and well.")
 
 # ------------------- SLASH COMMANDS -------------------
+@bot.tree.command(name="checknewmovies", description="Check for new movies in Jellyfin and post to the thread.")
+async def check_new_movies(interaction: discord.Interaction):
+    await interaction.response.defer(thinking=True)
+
+    try:
+        headers = {
+            "X-Emby-Token": JELLYFIN_API_KEY
+        }
+        response = requests.get(f"{JELLYFIN_URL}/emby/Items", params={
+            "IncludeItemTypes": "Movie",
+            "SortBy": "DateCreated",
+            "SortOrder": "Descending",
+            "Recursive": "true",
+            "Fields": "PrimaryImageAspectRatio",
+            "Limit": 3,
+            "ParentId": MOVIES_LIBRARY_ID
+        }, headers=headers)
+
+        data = response.json()
+        new_movies = data.get("Items", [])
+
+        if not new_movies:
+            await interaction.followup.send("🎬 No new movies found.")
+            return
+
+        thread = await bot.fetch_channel(MOVIE_ALERT_THREAD_ID)
+
+        for movie in new_movies:
+            name = movie.get("Name")
+            date_created = movie.get("DateCreated", "")
+            image_id = movie.get("Id")
+            year = movie.get("ProductionYear", "")
+            created_dt = parser.parse(date_created).strftime('%b %d, %Y') if date_created else "Unknown"
+            poster_url = f"{JELLYFIN_URL}/emby/Items/{image_id}/Images/Primary"
+
+            embed = discord.Embed(
+                title=f"🎬 {name} ({year})",
+                description=f"Added on **{created_dt}**",
+                color=0x00ff99
+            )
+            embed.set_image(url=poster_url)
+            await thread.send(embed=embed)
+
+        await interaction.followup.send("✅ Posted the latest movies.")
+    except Exception as e:
+        await interaction.followup.send("❌ Something went wrong.")
+        print("Error in /checknewmovies:", e)
 
 #TOGGLE TEST COMMAND
 @bot.tree.command(name="toggle_test", description="Toggle test mode on or off")
