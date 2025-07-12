@@ -8,6 +8,7 @@ import requests
 import asyncio
 import json
 import pytz
+import aiohttp
 from datetime import datetime, timezone
 from discord.ext import commands, tasks
 from discord import app_commands
@@ -27,6 +28,7 @@ TEST_MODE_ENABLED = os.getenv("TEST_MODE", "false").lower() == "true"
 TIMEZONE_FILE = "user_timezones.json"
 GUILD_ID = 401584720288153600
 current_time = datetime.now(timezone.utc).strftime("%-I:%M%p").lower()
+SEEN_MOVIE_IDS = set()
 
 # ------------------- UTILITY FUNCTIONS -------------------
 
@@ -165,8 +167,41 @@ async def on_ready():
 
     if not heartbeat.is_running():
         heartbeat.start()
+    
+    if not check_for_new_movies.is_running():
+    check_for_new_movies.start()
+
 
 # ------------------- TASKS -------------------
+@tasks.loop(minutes=10)
+async def check_for_new_movies():
+    await bot.wait_until_ready()
+    url = f"{JELLYFIN_URL}/Users/Public/Items?IncludeItemTypes=Movie&ParentId={MOVIES_LIBRARY_ID}&SortBy=DateCreated&SortOrder=Descending&Limit=5"
+
+    headers = {
+        "X-Emby-Token": JELLYFIN_API_KEY
+    }
+
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url, headers=headers) as resp:
+            if resp.status != 200:
+                print(f"Failed to fetch movies: {resp.status}")
+                return
+            data = await resp.json()
+            items = data.get("Items", [])
+            new_items = [item for item in items if item["Id"] not in SEEN_MOVIE_IDS]
+
+            if not new_items:
+                return
+
+            thread = await bot.fetch_channel(MOVIE_ALERT_THREAD_ID)
+            for item in reversed(new_items):  # oldest to newest
+                title = item.get("Name", "Unknown Title")
+                year = item.get("ProductionYear", "")
+                poster = f"{JELLYFIN_URL}/Items/{item['Id']}/Images/Primary"
+                message = f"🎬 **New Movie Added**: {title} ({year})\n{poster}"
+                await thread.send(message)
+                SEEN_MOVIE_IDS.add(item["Id"])
 
 # Weekly reminder task
 @tasks.loop(minutes=1)
