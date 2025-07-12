@@ -19,7 +19,7 @@ from dateutil import parser
 intents = discord.Intents.default()
 intents.message_content = True
 bot = commands.Bot(command_prefix="!", intents=intents)
-DISCORD_TOKEN = "MTM4NTAxNDk1ODg5MDQyMjI4Mg.GRhl_C.PF0Un0YO91-hLp-_nn6APbLsUJ0NH7cI9XmGLY"
+DISCORD_TOKEN = DISCORD_TOKEN = os.getenv("DISCORD_TOKEN")
 DISCORD_WEBHOOK = os.getenv("DISCORD_WEBHOOK")
 OWNER_ID = 162729945213173761
 CHANNEL_ID = 1385889605194088498
