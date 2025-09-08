@@ -33,6 +33,11 @@ JELLYFIN_URL = os.getenv("JELLYFIN_URL")
 JELLYFIN_API_KEY = os.getenv("JELLYFIN_API_KEY")
 MOVIES_LIBRARY_ID = os.getenv("MOVIES_LIBRARY_ID")
 MOVIE_ALERT_THREAD_ID = int(os.getenv("MOVIE_ALERT_THREAD_ID"))
+# MapleStory Boss Loot Priority
+JOSHUA_ID = 162729945213173761  # Your Discord ID
+MARK_ID = 727998565577654443   # Mark's Discord ID
+MAPLE_LOOT_CHANNEL_ID = 1414707967630246060  # Replace with your actual channel ID
+MAPLE_LOOT_START_DATE = datetime(2025, 9, 1)  # First week of rotation
 
 
 # ------------------- UTILITY FUNCTIONS -------------------
@@ -46,6 +51,11 @@ def load_timezones():
 def save_timezones(data):
     with open(TIMEZONE_FILE, "w") as f:
         json.dump(data, f, indent=4)
+
+def get_loot_priority():
+    weeks_passed = (datetime.utcnow() - MAPLE_LOOT_START_DATE).days // 7
+    return "Joshua" if weeks_passed % 2 == 0 else "Mark"
+
 
 # ------------------- WEEKLY BOSS PRIO -------------------
 
@@ -178,9 +188,27 @@ async def on_ready():
     if not check_for_new_movies.is_running():
     check_for_new_movies.start()
 
+    if not boss_loot_priority_reminder.is_running():
+    boss_loot_priority_reminder.start()
+
 
 
 # ------------------- TASKS -------------------
+
+# Weekly Prio 
+@tasks.loop(hours=24)
+async def boss_loot_priority_reminder():
+    await bot.wait_until_ready()
+    now = datetime.now(pytz.timezone("America/Los_Angeles"))
+    if now.weekday() == 0 and now.hour == 17:  # Monday @ 5pm PST
+        channel = bot.get_channel(MAPLE_LOOT_CHANNEL_ID)
+        if channel:
+            priority = get_loot_priority()
+            user_id = JOSHUA_ID if priority == "Joshua" else MARK_ID
+            await channel.send(f"🎯 <@{user_id}>, it's your week for MapleStory boss drop loot priority!")
+            
+
+# New movies
 @tasks.loop(minutes=10)
 async def check_for_new_movies():
     await bot.wait_until_ready()
