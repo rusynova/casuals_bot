@@ -47,6 +47,38 @@ def save_timezones(data):
     with open(TIMEZONE_FILE, "w") as f:
         json.dump(data, f, indent=4)
 
+# ------------------- WEEKLY BOSS PRIO -------------------
+
+# Weekly rotation schedule
+rotation = [
+    {"joshua": "Bowmaster", "mark": "Bucc"},
+    {"joshua": "Shade", "mark": "Bowmaster"},
+]
+
+start_date = datetime(2025, 9, 2)  # The first week of the rotation
+
+def get_current_week_rotation():
+    delta_weeks = (datetime.now().date() - start_date.date()).days // 7
+    index = delta_weeks % len(rotation)
+    return rotation[index]
+
+def generate_prio_image(joshua_class, mark_class):
+    # Create a blank image
+    img = Image.new('RGB', (600, 200), color=(30, 30, 30))
+    draw = ImageDraw.Draw(img)
+
+    # Fonts
+    font_title = ImageFont.truetype(font_path, 30)
+    font_text = ImageFont.truetype(font_path, 24)
+
+    # Add text
+    draw.text((20, 20), f"🗡️ Joshua's Prio: {joshua_class}", font=font_text, fill=(255, 255, 255))
+    draw.text((20, 80), f"🛡️ Mark's Prio: {mark_class}", font=font_text, fill=(255, 255, 255))
+
+    # Save to file
+    filename = "maplestory_weekly_prio.png"
+    img.save(filename)
+    return filename
 #------------------- PAGINATED TIMEZONES ------------------
 
 class PaginatedTimezoneDropdown(Select):
@@ -176,6 +208,10 @@ async def on_ready():
     if not check_for_new_movies.is_running():
     check_for_new_movies.start()
 
+    if not weekly_prio_notification.running():
+        weekly_prio_notification.start()
+    
+
 
 # ------------------- TASKS -------------------
 @tasks.loop(minutes=10)
@@ -207,6 +243,32 @@ async def check_for_new_movies():
                 message = f"🎬 **New Movie Added**: {title} ({year})\n{poster}"
                 await thread.send(message)
                 SEEN_MOVIE_IDS.add(item["Id"])
+import discord
+from discord.ext import tasks, commands
+from datetime import datetime
+from PIL import Image, ImageDraw, ImageFont
+
+intents = discord.Intents.default()
+intents.messages = True
+bot = commands.Bot(command_prefix="!", intents=intents)
+
+CHANNEL_ID = 123456789012345678  # replace with your channel
+font_path = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"  # adjust path to a ttf font
+
+# Weekly reminder for Loot Prio
+@tasks.loop(minutes=1)
+async def weekly_prio_notification():
+    now = datetime.now()
+    if now.weekday() == 1 and now.hour == 17 and now.minute == 0:  # Tuesday 5PM PST
+        channel = bot.get_channel(CHANNEL_ID)
+        if channel:
+            rotation_this_week = get_current_week_rotation()
+            image_file = generate_prio_image(rotation_this_week["joshua"], rotation_this_week["mark"])
+            await channel.send(
+                content="📅 Weekly MapleStory Boss Drop Priority!",
+                file=discord.File(image_file)
+            )
+
 
 # Weekly reminder task
 @tasks.loop(minutes=1)
