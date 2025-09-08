@@ -265,7 +265,7 @@ async def weekly_prio_notification():
             rotation_this_week = get_current_week_rotation()
             image_file = generate_prio_image(rotation_this_week["joshua"], rotation_this_week["mark"])
             await channel.send(
-                content="📅 Weekly MapleStory Boss Drop Priority!",
+                content="📅 Weekly MapleStory Boss Drop Priority! <@1414707967630246060>",
                 file=discord.File(image_file)
             )
 
