@@ -169,8 +169,8 @@ async def on_ready():
         print(f"❌ Error syncing commands: {e}")
 
     # Start only the appropriate tasks
-    if not weekly_reminder.is_running():
-        weekly_reminder.start()
+    #if not weekly_reminder.is_running():
+        #weekly_reminder.start()
         
     if TEST_MODE_ENABLED:
         if not test_reminder.is_running():
@@ -251,18 +251,18 @@ CHANNEL_ID = 123456789012345678  # replace with your channel
 font_path = "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf"  # adjust path to a ttf font
 
 # Weekly reminder task
-@tasks.loop(minutes=1)
-async def weekly_reminder():
-    now = datetime.now()
-    if now.weekday() == 1 and now.hour == 17 and now.minute == 0: # Tuesday @ 5pm PST
-        channel = bot.get_channel(CHANNEL_ID)
-        if channel:
-            with open("maplestory_weekly_reset_additional.png", "rb") as f:
-                picture = discord.File(f)
-                await channel.send(
-                    content="🗓️ Weekly Reset tomorrow! Get your shit done. <@&1385048198950944903>",
-                    file=picture
-                )
+#@tasks.loop(minutes=1)
+#async def weekly_reminder():
+    #now = datetime.now()
+    #if now.weekday() == 1 and now.hour == 17 and now.minute == 0: # Tuesday @ 5pm PST
+        #channel = bot.get_channel(CHANNEL_ID)
+        #if channel:
+            #with open("maplestory_weekly_reset_additional.png", "rb") as f:
+                #picture = discord.File(f)
+                #await channel.send(
+                    #content="🗓️ Weekly Reset tomorrow! Get your shit done. <@&1385048198950944903>",
+                    #file=picture
+                #)
 
 # Test Loop task
 @tasks.loop(minutes=4)
